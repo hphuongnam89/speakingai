@@ -1,0 +1,16 @@
+{
+    # Global settings
+    auto_https off
+}
+
+:80 {
+    # Reverse proxy to backend container
+    reverse_proxy backend:8000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote}
+        transport http {
+            read_timeout 180s
+            response_header_timeout 180s
+        }
+    }
+}

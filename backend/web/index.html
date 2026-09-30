@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f6f5ef" />
+    <meta name="description" content="Luyện IELTS Speaking cùng AI coach chạy trên Ollama local." />
+    <title>Speakwell — IELTS Speaking Coach</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="Speakwell trang chủ">
+          <span class="brand-mark" aria-hidden="true">s.</span>
+          <span class="brand-name">speakwell<span> / SPEAKING COACH</span></span>
+        </a>
+        <div id="connection-status" class="connection-status is-checking" role="status" aria-live="polite">
+          <span class="status-dot"></span><span id="connection-label">Đang kết nối AI local…</span>
+        </div>
+      </header>
+
+      <main>
+        <section class="intro-row">
+          <div>
+            <p class="eyebrow">YOUR DAILY SPEAKING PRACTICE</p>
+            <h1>Nói tự tin hơn,<br /><em>từng câu một.</em></h1>
+            <p class="intro-copy">Luyện nói tiếng Anh với AI coach chạy trên máy của bạn. Không cần tài khoản để bắt đầu.</p>
+          </div>
+          <div class="streak-note"><span class="streak-icon">✳</span><span>Chậm lại.<br />Nói rõ ý mình.</span></div>
+        </section>
+
+        <section class="workspace" aria-label="Khu vực luyện nói">
+          <div class="practice-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">PRACTICE ROOM</p>
+                <h2>Buổi luyện nói</h2>
+              </div>
+              <button id="new-session" class="text-button hidden" type="button">＋ Buổi mới</button>
+            </div>
+
+            <div id="welcome-state" class="welcome-state">
+              <div class="welcome-illustration" aria-hidden="true">
+                <span class="sun-disc"></span><span class="speech-mark">Aa</span>
+                <span class="orbit orbit-one"></span><span class="orbit orbit-two"></span>
+              </div>
+              <p class="eyebrow">A LITTLE PRACTICE GOES A LONG WAY</p>
+              <h3>Sẵn sàng nói chưa?</h3>
+              <p>Chọn một chủ đề, bắt đầu bằng giọng nói hoặc gõ câu trả lời. AI sẽ phản hồi và chỉ ra điểm bạn có thể cải thiện.</p>
+              <button id="welcome-start" class="primary-button" type="button">Bắt đầu luyện <span aria-hidden="true">↗</span></button>
+              <span id="speech-note" class="privacy-note">Đang kiểm tra khả năng ghi âm…</span>
+            </div>
+
+            <div id="cue-card" class="cue-card hidden"></div>
+            <div id="conversation" class="conversation hidden" aria-live="polite"></div>
+            <div id="result-card" class="result-card hidden"></div>
+
+            <form id="composer" class="composer hidden">
+              <label class="sr-only" for="answer">Câu trả lời tiếng Anh</label>
+              <textarea id="answer" rows="2" placeholder="Type your answer in English…" maxlength="4000"></textarea>
+              <div class="composer-footer">
+                <span id="composer-hint">Enter để gửi · Shift + Enter để xuống dòng</span>
+                <div class="composer-actions">
+                  <button id="record-button" class="record-button" type="button" aria-label="Ghi âm câu trả lời">
+                    <span class="mic-icon" aria-hidden="true">●</span><span id="record-label">Ghi âm</span>
+                  </button>
+                  <button id="send-button" class="send-button" type="submit" aria-label="Gửi câu trả lời">Gửi <span aria-hidden="true">↑</span></button>
+                </div>
+              </div>
+            </form>
+            <div id="error-message" class="error-message hidden" role="alert"></div>
+          </div>
+
+          <aside class="guide-panel">
+            <div class="guide-topline"><span class="guide-symbol">✳</span><span>YOUR SESSION</span></div>
+            <label class="field-label" for="practice-mode">Hôm nay mình sẽ</label>
+            <select id="practice-mode" class="select-field">
+              <option value="daily">Trò chuyện tự do</option>
+              <option value="part2">Luyện IELTS Speaking Part 2</option>
+            </select>
+
+            <label class="field-label" for="topic">Chủ đề luyện nói</label>
+            <input id="topic" class="text-field" value="A memorable weekend" maxlength="100" />
+            <button id="start-session" class="start-button" type="button">Tạo buổi luyện <span aria-hidden="true">→</span></button>
+
+            <div class="guide-divider"></div>
+            <p class="eyebrow">A GENTLE REMINDER</p>
+            <p class="guide-quote">“You don't have to be perfect. You just have to keep going.”</p>
+            <p class="guide-translation">Mỗi câu trả lời là một lần tiến bộ.</p>
+
+            <div class="mini-status">
+              <span class="mini-status-icon">↗</span>
+              <div><strong>AI feedback</strong><span>Điểm IELTS chỉ mang tính ước lượng.</span></div>
+            </div>
+            <a class="docs-link" href="/docs" target="_blank" rel="noreferrer">API docs <span aria-hidden="true">↗</span></a>
+          </aside>
+        </section>
+        <footer class="page-footer"><span>Speakwell · Local AI speaking practice</span><span>Practice makes progress.</span></footer>
+      </main>
+    </div>
+  </body>
+</html>

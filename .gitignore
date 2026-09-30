@@ -19,6 +19,19 @@ build/
 android/.gradle/
 android/local.properties
 android/**/build/
+*.jks
+*.keystore
+keystore.properties
+
+# Audio recordings & media cache
+backend/data/audio/
+**/data/audio/
+*.webm
+*.wav
+*.mp3
+*.m4a
+*.ogg
 
 *.log
 .DS_Store
+

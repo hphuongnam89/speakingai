@@ -1,0 +1,54 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install backend dependencies
+        run: python -m pip install -r backend/requirements.txt
+      - name: Run backend API and flow tests
+        working-directory: backend
+        run: python -m pytest tests -q
+
+  backend-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend container
+        run: docker build -t ielts-speaking-backend:${{ github.sha }} ./backend
+
+  android-debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: Assemble debug APK
+        working-directory: android
+        env:
+          SENTRY_ANDROID_DSN: ${{ vars.SENTRY_ANDROID_DSN }}
+        run: gradle assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ielts-speaking-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk

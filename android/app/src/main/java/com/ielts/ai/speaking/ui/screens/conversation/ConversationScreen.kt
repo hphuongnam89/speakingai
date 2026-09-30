@@ -392,7 +392,7 @@ fun ConversationScreen(
             isDrilling = isDrilling,
             onDismiss = { viewModel.dismissPronunciationSheet() },
             onListen = { viewModel.speakText(selectedWord!!.word) },
-            onPractice = { viewModel.practiceDrill(selectedWord!!.word, selectedWord!!.word) }
+            onPractice = { viewModel.practiceDrill(selectedWord!!.word) }
         )
     }
 }
@@ -469,29 +469,41 @@ fun MessageBubble(
             }
         }
 
-        // Phase 5: Pronunciation score pill below user bubble
-        if (isUser && message.pronunciation != null) {
-            val pron = message.pronunciation
+        // Whisper recognition confidence is not a pronunciation score.
+        val pron = message.pronunciation
+        if (isUser && pron != null && (pron.recognitionConfidence != null || pron.pronunciationScore != null)) {
             Surface(
-                color = Color(0xFFECFDF5),
+                color = Color(0xFFEFF6FF),
                 shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, Color(0xFFA7F3D0)),
+                border = BorderStroke(1.dp, Color(0xFFBFDBFE)),
                 modifier = Modifier.padding(top = 4.dp, end = 4.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
-                    Text(
-                        text = "🎙️ Pronunciation: ${pron.overallScore.toInt()}% (Band ${pron.estimatedBand})",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF065F46),
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Column {
+                        pron.recognitionConfidence?.let { confidence ->
+                            Text(
+                                text = "📝 Speech recognition confidence: ${confidence.toInt()}% (not a pronunciation score)",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFF1E40AF),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        pron.pronunciationScore?.let { score ->
+                            Text(
+                                text = "Experimental audio pronunciation score: ${score.toInt()}/100 (not an IELTS band)",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFF1E40AF),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
                     if (pron.problemWords.isNotEmpty()) {
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "• Tap highlighted words to practice",
+                            text = "• Tap uncertain words to review",
                             style = MaterialTheme.typography.labelSmall,
                             color = Color(0xFFD97706)
                         )
@@ -551,7 +563,7 @@ fun PronunciationDrillDialog(
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        text = if (word.needsReview) "Needs Review" else "Good (${(word.confidence * 100).toInt()}%)",
+                        text = if (word.needsReview) "Check transcript" else word.confidence?.let { "Recognition ${(it * 100).toInt()}%" } ?: "No confidence data",
                         color = if (word.needsReview) Color(0xFF92400E) else Color(0xFF15803D),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
@@ -635,7 +647,7 @@ fun PronunciationDrillDialog(
                 if (drillResult != null) {
                     Card(
                         colors = CardDefaults.cardColors(
-                            containerColor = if (drillResult.score >= 80) Color(0xFFF0FDF4) else Color(0xFFFEF2F2)
+                            containerColor = Color(0xFFEFF6FF)
                         ),
                         shape = RoundedCornerShape(8.dp)
                     ) {
@@ -646,16 +658,16 @@ fun PronunciationDrillDialog(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
-                                    text = "Your Score: ${drillResult.score.toInt()}%",
+                                    text = drillResult.score?.let { "Audio score: ${it.toInt()}%" } ?: "Audio pronunciation score unavailable",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (drillResult.score >= 80) Color(0xFF15803D) else Color(0xFFDC2626)
+                                    color = Color(0xFF1E40AF)
                                 )
                                 Text(
                                     text = drillResult.accuracy,
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (drillResult.score >= 80) Color(0xFF15803D) else Color(0xFFDC2626)
+                                    color = Color(0xFF1E40AF)
                                 )
                             }
                             Text(

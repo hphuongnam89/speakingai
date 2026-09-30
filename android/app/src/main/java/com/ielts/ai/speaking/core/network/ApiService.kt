@@ -6,6 +6,12 @@ import okhttp3.RequestBody
 import retrofit2.http.*
 
 interface ApiService {
+    @POST("api/v1/auth/register")
+    suspend fun register(@Body request: AuthRequest): AuthResponse
+
+    @POST("api/v1/auth/login")
+    suspend fun login(@Body request: AuthRequest): AuthResponse
+
     @GET("api/v1/health")
     suspend fun checkHealth(): HealthResponse
 
@@ -23,6 +29,9 @@ interface ApiService {
 
     @POST("api/v1/sessions/")
     suspend fun createSession(@Body request: SessionCreateRequest): SessionResponse
+
+    @GET("api/v1/sessions/")
+    suspend fun getSessions(): List<SessionResponse>
 
     @GET("api/v1/sessions/{id}")
     suspend fun getSession(@Path("id") id: String): SessionDetailResponse
@@ -67,13 +76,13 @@ interface ApiService {
 
     // Phase 4: Progress & Adaptive Learning
     @GET("api/v1/progress/summary")
-    suspend fun getProgressSummary(@Query("user_id") userId: String = "default"): ProgressSummaryDto
+    suspend fun getProgressSummary(): ProgressSummaryDto
 
     @GET("api/v1/progress/weekly")
-    suspend fun getWeeklyProgress(@Query("user_id") userId: String = "default"): List<DailyStatItemDto>
+    suspend fun getWeeklyProgress(): List<DailyStatItemDto>
 
     @GET("api/v1/progress/adaptive-plan")
-    suspend fun getAdaptivePlan(@Query("user_id") userId: String = "default"): AdaptivePlanDto
+    suspend fun getAdaptivePlan(): AdaptivePlanDto
 
     // Phase 5: Pronunciation Engine
     @POST("api/v1/pronunciation/analyze")

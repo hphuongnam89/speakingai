@@ -1,6 +1,7 @@
 import json
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
+from app.core.config import settings
 from app.core.database import get_db
 from app.models.session import SessionModel
 from app.repositories.session_repo import SessionRepository
@@ -21,11 +22,12 @@ from app.schemas.ielts import (
     CueCard,
     SuggestedExpression
 )
+from app.core.auth import get_current_user_id
 
 router = APIRouter(prefix="/ielts", tags=["ielts"])
 
 @router.post("/start", response_model=IeltsStartResponse)
-async def start_ielts_test(req: IeltsStartRequest, db: Session = Depends(get_db)):
+async def start_ielts_test(req: IeltsStartRequest, request: Request, db: Session = Depends(get_db)):
     session_repo = SessionRepository(db)
     turn_repo = TurnRepository(db)
 
@@ -67,7 +69,8 @@ async def start_ielts_test(req: IeltsStartRequest, db: Session = Depends(get_db)
     # Create session
     session = session_repo.create(
         mode=f"ielts_{part}",
-        topic=topic_name
+        topic=topic_name,
+        user_id=get_current_user_id(request)
     )
 
     # Save examiner greeting as initial turn
@@ -87,11 +90,11 @@ async def start_ielts_test(req: IeltsStartRequest, db: Session = Depends(get_db)
     )
 
 @router.post("/respond", response_model=IeltsRespondResponse)
-async def respond_ielts_turn(req: IeltsRespondRequest, db: Session = Depends(get_db)):
+async def respond_ielts_turn(req: IeltsRespondRequest, request: Request, db: Session = Depends(get_db)):
     session_repo = SessionRepository(db)
     turn_repo = TurnRepository(db)
 
-    session = session_repo.get(req.session_id)
+    session = session_repo.get(req.session_id, get_current_user_id(request))
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -158,11 +161,11 @@ async def respond_ielts_turn(req: IeltsRespondRequest, db: Session = Depends(get
     )
 
 @router.post("/evaluate/{session_id}", response_model=IeltsEvaluationResponse)
-async def evaluate_ielts_session(session_id: str, db: Session = Depends(get_db)):
+async def evaluate_ielts_session(session_id: str, request: Request, db: Session = Depends(get_db)):
     session_repo = SessionRepository(db)
     turn_repo = TurnRepository(db)
 
-    session = session_repo.get(session_id)
+    session = session_repo.get(session_id, get_current_user_id(request))
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -186,7 +189,10 @@ async def evaluate_ielts_session(session_id: str, db: Session = Depends(get_db))
     )
 
     model_router = get_model_router()
-    raw_eval = await model_router.chat(eval_messages)
+    raw_eval = await model_router.chat(
+        eval_messages,
+        options={"timeout": settings.LLM_TIMEOUT},
+    )
     eval_data = parse_evaluation(raw_eval)
 
     # Persist in DB

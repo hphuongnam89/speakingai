@@ -176,7 +176,7 @@ class ConversationViewModel : ViewModel() {
 
                 val transcribeRes = ApiClient.getService().transcribeAudio(part, sessionPart)
                 if (transcribeRes.text.isNotBlank()) {
-                    sendMessage(transcribeRes.text, sessionId, mode)
+                    sendMessage(transcribeRes.text, sessionId, mode, transcribeRes.pronunciation)
                 } else {
                     _error.value = "No speech detected in audio."
                     _isProcessing.value = false
@@ -188,13 +188,19 @@ class ConversationViewModel : ViewModel() {
         }
     }
 
-    fun sendMessage(text: String, sessionId: String, mode: String) {
+    fun sendMessage(
+        text: String,
+        sessionId: String,
+        mode: String,
+        pronunciation: PronunciationReportDto? = null
+    ) {
         if (text.isBlank()) return
         
         val userMsg = MessageItem(
             id = System.currentTimeMillis().toString(),
             role = "user",
-            text = text
+            text = text,
+            pronunciation = pronunciation
         )
         _messages.value = _messages.value + userMsg
         
@@ -226,14 +232,6 @@ class ConversationViewModel : ViewModel() {
                         text = ieltsRes.message
                     )
                     _messages.value = _messages.value + aiMsg
-
-                    // Phase 5: Fetch pronunciation analysis for IELTS turn
-                    try {
-                        val pronReport = api.analyzePronunciation(PronunciationAnalysisRequest(text = text))
-                        _messages.value = _messages.value.map { msg ->
-                            if (msg.id == userMsg.id) msg.copy(pronunciation = pronReport) else msg
-                        }
-                    } catch (_: Exception) {}
 
                     if (_autoPlayTts.value && ieltsRes.ttsText.isNotBlank()) {
                         ttsManager.speak(
@@ -296,17 +294,13 @@ class ConversationViewModel : ViewModel() {
         _drillResult.value = null
     }
 
-    fun practiceDrill(targetWord: String, spoken: String) {
+    fun practiceDrill(targetWord: String) {
         viewModelScope.launch {
             _isDrilling.value = true
             try {
                 val api = ApiClient.getService()
                 val result = api.evaluatePronunciationDrill(
-                    PronunciationDrillRequest(
-                        targetWord = targetWord,
-                        userSpokenText = spoken,
-                        audioConfidence = if (spoken.equals(targetWord, ignoreCase = true)) 0.95f else 0.68f
-                    )
+                    PronunciationDrillRequest(targetWord = targetWord)
                 )
                 _drillResult.value = result
             } catch (e: Exception) {

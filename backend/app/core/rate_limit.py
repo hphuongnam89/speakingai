@@ -16,6 +16,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.requests: Dict[str, List[float]] = {}
         self.lock = threading.Lock()
         self.window_seconds = 60
+        self.request_counter = 0
         self.whitelist_prefixes = [
             "/docs",
             "/openapi.json",
@@ -32,27 +33,37 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if any(path.startswith(prefix) for prefix in self.whitelist_prefixes) or path == "/":
             return await call_next(request)
 
-        client_ip = request.client.host if request.client else "unknown"
+        client_ip = request.headers.get("x-real-ip") or (request.client.host if request.client else "unknown")
+        is_auth_endpoint = path in {"/api/v1/auth/login", "/api/v1/auth/register"}
+        bucket_key = f"{client_ip}:auth" if is_auth_endpoint else client_ip
+        request_limit = min(settings.RATE_LIMIT_PER_MINUTE, 10) if is_auth_endpoint else settings.RATE_LIMIT_PER_MINUTE
         now = time.time()
 
         with self.lock:
             # Clean expired timestamps for this IP
             cutoff = now - self.window_seconds
-            ip_requests = [t for t in self.requests.get(client_ip, []) if t > cutoff]
+            self.request_counter += 1
+            if self.request_counter % 256 == 0 or len(self.requests) >= 10000:
+                self.requests = {
+                    ip: [timestamp for timestamp in timestamps if timestamp > cutoff]
+                    for ip, timestamps in self.requests.items()
+                    if any(timestamp > cutoff for timestamp in timestamps)
+                }
+            ip_requests = [t for t in self.requests.get(bucket_key, []) if t > cutoff]
 
-            if len(ip_requests) >= settings.RATE_LIMIT_PER_MINUTE:
+            if len(ip_requests) >= request_limit:
                 oldest = ip_requests[0]
                 retry_after = int(self.window_seconds - (now - oldest)) + 1
                 return JSONResponse(
                     status_code=429,
                     content={
-                        "detail": f"Rate limit exceeded: Maximum {settings.RATE_LIMIT_PER_MINUTE} requests per minute",
+                        "detail": f"Rate limit exceeded: Maximum {request_limit} requests per minute",
                         "retry_after_seconds": max(1, retry_after)
                     },
                     headers={"Retry-After": str(max(1, retry_after))}
                 )
 
             ip_requests.append(now)
-            self.requests[client_ip] = ip_requests
+            self.requests[bucket_key] = ip_requests
 
         return await call_next(request)

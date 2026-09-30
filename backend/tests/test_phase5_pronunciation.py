@@ -32,8 +32,8 @@ def test_phase5_pronunciation_engine():
     })
     assert res_analysis.status_code == 200, res_analysis.text
     report = res_analysis.json()
-    print(f"Overall Score: {report['overall_score']}%")
-    print(f"Estimated Pronunciation Band: {report['estimated_band']}")
+    print(f"Recognition confidence: {report['recognition_confidence']}")
+    print(f"Experimental pronunciation score: {report['pronunciation_score']}")
     print(f"Total Words Analyzed: {report['word_count']}")
     print(f"Words: {len(report['words'])}")
     print(f"Rhythm (WPM): {report['rhythm']['speech_rate_wpm']}")
@@ -41,25 +41,25 @@ def test_phase5_pronunciation_engine():
 
     assert report["word_count"] > 0
     assert len(report["words"]) == report["word_count"]
-    assert 1.0 <= report["estimated_band"] <= 9.0
+    assert report["recognition_confidence"] is None
+    assert report["pronunciation_score"] is None
+    assert "not an IELTS result" in report["disclaimer"]
     for w in report["words"]:
         assert "expected_ipa" in w
         assert "confidence" in w
-        assert 0.0 <= w["confidence"] <= 1.0
+        assert w["confidence"] is None
 
     print("\n=== 3. TEST PRONUNCIATION DRILL (LISTEN, RECORD, REPEAT) ===")
     res_drill = client.post("/api/v1/pronunciation/drill", json={
-        "target_word": "technology",
-        "user_spoken_text": "technology",
-        "audio_confidence": 0.94
+        "target_word": "technology"
     })
     assert res_drill.status_code == 200, res_drill.text
     drill_data = res_drill.json()
     print(f"Drill score for '{drill_data['word']}': {drill_data['score']} ({drill_data['accuracy']})")
     print(f"Tips: {drill_data['tips']}")
     print(f"Sample Sentence: {drill_data['sample_sentence']}")
-    assert drill_data["score"] >= 90
-    assert drill_data["accuracy"] == "Excellent"
+    assert drill_data["score"] is None
+    assert drill_data["accuracy"] == "Not scored"
 
     print("\n=== 4. TEST INTEGRATION IN CONVERSATION TURN ===")
     # Create session
@@ -77,9 +77,7 @@ def test_phase5_pronunciation_engine():
     conv_data = conv_res.json()
     assert "pronunciation" in conv_data
     pron = conv_data["pronunciation"]
-    assert pron is not None
-    print(f"Conversation Pronunciation Score: {pron['overall_score']}%, Band {pron['estimated_band']}")
-    assert len(pron["words"]) > 0
+    assert pron is None
 
     print("\n>>> ALL PHASE 5 PRONUNCIATION ENGINE BACKEND TESTS PASSED! <<<")
 

@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.core.database import get_db
+from app.core.config import settings
 from app.schemas.conversation import ConversationRequest, ConversationResponse, Correction
 from app.repositories.session_repo import SessionRepository
 from app.repositories.turn_repo import TurnRepository
@@ -8,36 +9,46 @@ from app.repositories.mistake_repo import MistakeRepository
 from app.repositories.settings_repo import SettingsRepository
 from app.services.llm.router import get_model_router
 from app.prompts.tutor import build_conversation_messages, parse_corrections
+from app.core.auth import get_current_user_id
 
 router = APIRouter(prefix="/conversation", tags=["conversation"])
 
 @router.post("/respond", response_model=ConversationResponse)
-async def get_response(req: ConversationRequest, db: Session = Depends(get_db)):
+async def get_response(req: ConversationRequest, request: Request, db: Session = Depends(get_db)):
     session_repo = SessionRepository(db)
     turn_repo = TurnRepository(db)
     mistake_repo = MistakeRepository(db)
     settings_repo = SettingsRepository(db)
     
-    session = session_repo.get(req.session_id)
+    session = session_repo.get(req.session_id, get_current_user_id(request))
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     
-    # Save user turn
-    user_turn = turn_repo.create(
-        session_id=req.session_id,
-        role="user",
-        transcript=req.user_text
-    )
-    
-    # Load all turns and convert to message dicts
+    # Audio transcription stores the candidate turn before calling this route.
+    # Reuse that last turn when the transcript matches to avoid duplicating it
+    # in session history (Android and web voice flows both use this sequence).
     turns = turn_repo.get_by_session(req.session_id)
+    if (
+        turns
+        and turns[-1].role == "user"
+        and turns[-1].transcript.strip() == req.user_text.strip()
+    ):
+        user_turn = turns[-1]
+    else:
+        user_turn = turn_repo.create(
+            session_id=req.session_id,
+            role="user",
+            transcript=req.user_text
+        )
+        turns = turn_repo.get_by_session(req.session_id)
+
+    # Load all turns and convert to message dicts
     turn_dicts = [{"role": t.role, "content": t.transcript} for t in turns]
     
-    # Determine correction level
-    correction_level = req.correction_level
-    if not correction_level:
-        user_settings = settings_repo.get_or_create(session.user_id)
-        correction_level = user_settings.correction_level or "important"
+    # Load user settings for model routing even when the request overrides the
+    # correction level. The settings are also the fallback for that level.
+    user_settings = settings_repo.get_or_create(session.user_id)
+    correction_level = req.correction_level or user_settings.correction_level or "important"
 
     messages = build_conversation_messages(
         mode=session.mode,
@@ -50,7 +61,10 @@ async def get_response(req: ConversationRequest, db: Session = Depends(get_db)):
     options = {
         "preference": getattr(user_settings, "provider_preference", "auto"),
         "local_only": getattr(user_settings, "local_only", False),
-        "cloud_fallback": getattr(user_settings, "cloud_fallback", False)
+        "cloud_fallback": getattr(user_settings, "cloud_fallback", False),
+        # Local model replies can take longer than the provider's short default
+        # timeout, especially on the first turn after loading a model.
+        "timeout": settings.LLM_TIMEOUT,
     }
     response_text, meta = await model_router.chat_with_metadata(messages, options)
     
@@ -90,19 +104,13 @@ async def get_response(req: ConversationRequest, db: Session = Depends(get_db)):
         mistakes=len(corrections) if correction_level != "none" else 0
     )
     
-    from app.services.pronunciation.pronunciation_service import get_pronunciation_service
-    pronunciation_report = get_pronunciation_service().analyze_speech(
-        text=req.user_text,
-        duration_ms=round(max(words_count / 110.0, 0.25) * 60 * 1000, 1)
-    )
-
     return ConversationResponse(
         message=clean_reply,
         corrections=[Correction(**c) for c in corrections],
         repeat_prompt=repeat_prompt,
         tts_text=clean_reply,
         turn_id=str(assistant_turn.id) if assistant_turn else None,
-        pronunciation=pronunciation_report,
+        pronunciation=None,
         provider_used=meta.get("provider_used"),
         fallback_triggered=meta.get("fallback_triggered", False),
         latency_ms=meta.get("latency_ms")

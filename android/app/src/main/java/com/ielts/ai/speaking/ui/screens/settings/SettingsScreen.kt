@@ -1,6 +1,8 @@
 package com.ielts.ai.speaking.ui.screens.settings
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
@@ -11,6 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ielts.ai.speaking.ui.theme.SuccessGreen
 import com.ielts.ai.speaking.ui.theme.ErrorRed
@@ -25,6 +29,11 @@ fun SettingsScreen(
     val isChecking by viewModel.isChecking.collectAsState()
     val connectionStatus by viewModel.connectionStatus.collectAsState()
     val modelName by viewModel.modelName.collectAsState()
+    val email by viewModel.email.collectAsState()
+    val password by viewModel.password.collectAsState()
+    val accountStatus by viewModel.accountStatus.collectAsState()
+    val sessions by viewModel.sessions.collectAsState()
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -42,7 +51,8 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text("Backend Server Configuration", style = MaterialTheme.typography.titleMedium)
@@ -54,6 +64,36 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
+
+            Text("Account sync", style = MaterialTheme.typography.titleMedium)
+            Text("Create an account or sign in to sync sessions, mistakes and progress across devices.", style = MaterialTheme.typography.bodySmall)
+            OutlinedTextField(
+                value = email,
+                onValueChange = viewModel::updateEmail,
+                label = { Text("Email") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            OutlinedTextField(
+                value = password,
+                onValueChange = viewModel::updatePassword,
+                label = { Text("Password (10+ characters)") },
+                modifier = Modifier.fillMaxWidth(),
+                visualTransformation = PasswordVisualTransformation(),
+                singleLine = true
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = { viewModel.authenticate(context, register = false) }) { Text("Sign in") }
+                OutlinedButton(onClick = { viewModel.authenticate(context, register = true) }) { Text("Create account") }
+                TextButton(onClick = { viewModel.signOut(context) }) { Text("Sign out") }
+            }
+            if (accountStatus.isNotBlank()) Text(accountStatus, style = MaterialTheme.typography.bodySmall)
+            if (sessions.isNotEmpty()) {
+                Text("Synced recent sessions", style = MaterialTheme.typography.titleSmall)
+                sessions.forEach { session ->
+                    Text("• ${session.topic ?: session.mode} · ${session.startedAt}", style = MaterialTheme.typography.bodySmall)
+                }
+            }
             
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -81,7 +121,7 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Button(
-                    onClick = { viewModel.testConnection() },
+                    onClick = { viewModel.testConnection(context) },
                     enabled = !isChecking
                 ) {
                     Text(if (isChecking) "Checking..." else "Test Connection")

@@ -69,8 +69,8 @@ def test_ielts_part2_cue_card():
     print(f"Part 2 conclusion: {ans_data['message']}")
 
     # Evaluation
-    print("\n=== TEST 4: IELTS EVALUATION (OLLAMA EVALUATOR) ===")
-    eval_res = client.post(f"/api/v1/ielts/evaluate/{session_id}", timeout=120.0)
+    print("\n=== TEST 4: IELTS EVALUATION RESPONSE CONTRACT ===")
+    eval_res = client.post(f"/api/v1/ielts/evaluate/{session_id}")
     assert eval_res.status_code == 200, eval_res.text
 
     eval_data = eval_res.json()

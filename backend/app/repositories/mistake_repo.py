@@ -87,8 +87,11 @@ class MistakeRepository:
             .all()
         )
 
-    def resolve_mistake(self, mistake_id: str) -> MistakeModel | None:
-        mistake = self.db.query(MistakeModel).filter(MistakeModel.id == mistake_id).first()
+    def resolve_mistake(self, mistake_id: str, user_id: str | None = None) -> MistakeModel | None:
+        query = self.db.query(MistakeModel).filter(MistakeModel.id == mistake_id)
+        if user_id is not None:
+            query = query.filter(MistakeModel.user_id == user_id)
+        mistake = query.first()
         if mistake:
             mistake.resolved = True
             self.db.commit()

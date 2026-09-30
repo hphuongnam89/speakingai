@@ -1,5 +1,7 @@
 package com.ielts.ai.speaking.core.network
 
+import android.content.Context
+import com.ielts.ai.speaking.BuildConfig
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -12,7 +14,18 @@ object ApiClient {
     var currentBaseUrl: String = DEFAULT_BASE_URL
         private set
 
+    @Volatile
+    private var accessToken: String = ""
+
     private var currentService: ApiService? = null
+
+    fun initialize(context: Context) {
+        accessToken = ApiCredentialStore.readAccessToken(context.applicationContext).orEmpty()
+    }
+
+    fun updateAccessToken(value: String) {
+        accessToken = value.trim()
+    }
 
     fun getService(): ApiService {
         return currentService ?: create(currentBaseUrl)
@@ -26,14 +39,20 @@ object ApiClient {
 
     fun create(baseUrl: String = currentBaseUrl): ApiService {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE
         }
 
         val client = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder().apply {
+                    accessToken.takeIf { it.isNotBlank() }?.let { header("Authorization", "Bearer $it") }
+                }.build()
+                chain.proceed(request)
+            }
             .addInterceptor(loggingInterceptor)
             .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
-            .writeTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(360, TimeUnit.SECONDS)
+            .writeTimeout(120, TimeUnit.SECONDS)
             .build()
 
         val service = Retrofit.Builder()

@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: ielts-ai-backend
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - ./data:/app/data
     env_file:
@@ -16,11 +16,18 @@ services:
       - ENVIRONMENT=production
       - DATABASE_URL=${DATABASE_URL:-sqlite:///./data/app.db}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-ornith-1.5:9b}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
       - DEEPSEEK_ENABLED=${DEEPSEEK_ENABLED:-false}
+      - PRONUNCIATION_ASSESSOR_URL=${PRONUNCIATION_ASSESSOR_URL:-}
+      - API_KEY_ENABLED=true
+      - API_KEY=${API_KEY:?Set API_KEY in .env to a random secret of at least 32 characters}
+      - RATE_LIMIT_ENABLED=true
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost}
     restart: unless-stopped
     depends_on:
-      - ollama
+      ollama-model-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 30s
@@ -32,15 +39,45 @@ services:
   ollama:
     image: ollama/ollama:latest
     container_name: ielts-ai-ollama
-    ports:
-      - "11434:11434"
     volumes:
       - ollama-models:/root/.ollama
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     networks:
       - ielts-network
 
-  # Optional Production Reverse Proxy with HTTPS
+  ollama-model-init:
+    image: ollama/ollama:latest
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-ornith-1.5:9b}
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["ollama pull \"$$OLLAMA_MODEL\""]
+    depends_on:
+      ollama:
+        condition: service_healthy
+    networks:
+      - ielts-network
+    restart: "no"
+
+  pronunciation-assessor:
+    build:
+      context: .
+      dockerfile: docker/pronunciation/Dockerfile
+    container_name: ielts-ai-pronunciation
+    volumes:
+      - pronunciation-models:/models
+    restart: unless-stopped
+    profiles:
+      - pronunciation
+    networks:
+      - ielts-network
+
+  # Optional production reverse proxy. Mount fullchain.pem and privkey.pem in ./docker/ssl.
   reverse-proxy:
     image: nginx:alpine
     container_name: ielts-ai-proxy
@@ -61,6 +98,8 @@ services:
 volumes:
   ollama-models:
     name: ielts-ollama-models
+  pronunciation-models:
+    name: ielts-pronunciation-models
 
 networks:
   ielts-network:

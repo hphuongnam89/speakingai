@@ -1,26 +1,34 @@
-import httpx
+"""Unit tests for the tutor's correction protocol (no local model required)."""
 
-prompt = """You are an English speaking coach.
-Keep spoken responses natural and concise (2-3 sentences).
-Always ask one follow-up question.
+from app.prompts.tutor import build_conversation_messages, parse_corrections
 
-CRITICAL FORMAT REQUIREMENT:
-When you notice errors, you MUST append [CORRECTIONS]...[/CORRECTIONS] at the very end of your response.
 
-Example:
-User: "Yesterday I go to market and buyed apples."
-Assistant:
-Sounds like a productive day! What did you make with the apples?
-[CORRECTIONS]{"corrections": [{"original": "I go", "corrected": "I went", "explanation": "Past tense", "category": "grammar", "should_repeat": true}, {"original": "buyed", "corrected": "bought", "explanation": "Irregular verb", "category": "grammar", "should_repeat": true}]}[/CORRECTIONS]
-"""
+def test_parse_corrections_and_say_it_again_prompt():
+    response = (
+        "Nice answer. What happened next?\n"
+        '[CORRECTIONS]{"corrections":[{"original":"She don\'t",'
+        '"corrected":"She doesn\'t","explanation":"Use does with she.",'
+        '"category":"grammar","should_repeat":true}]}[/CORRECTIONS]'
+    )
 
-res = httpx.post("http://localhost:11434/api/chat", json={
-    "model": "ornith-1.5:9b",
-    "messages": [
-        {"role": "system", "content": prompt},
-        {"role": "user", "content": "She don't like playing tennis with us on Sunday."}
-    ],
-    "stream": False
-}, timeout=30)
+    clean_reply, corrections, repeat_prompt = parse_corrections(response)
 
-print(res.json().get("message", {}).get("content", ""))
+    assert clean_reply == "Nice answer. What happened next?"
+    assert corrections == [{
+        "original": "She don't",
+        "corrected": "She doesn't",
+        "explanation": "Use does with she.",
+        "category": "grammar",
+        "should_repeat": True,
+    }]
+    assert repeat_prompt == 'Try saying: "She doesn\'t"'
+
+
+def test_conversation_prompt_contains_selected_correction_level():
+    messages = build_conversation_messages(
+        mode="daily", turns=[], topic="Travel", correction_level="none"
+    )
+
+    assert messages[0]["role"] == "system"
+    assert "Correction Level: NONE" in messages[0]["content"]
+    assert "Today's topic: Travel" in messages[0]["content"]

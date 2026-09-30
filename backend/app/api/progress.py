@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.repositories.progress_repo import ProgressRepository
@@ -11,23 +11,27 @@ from app.schemas.progress import (
     DailyStatItem,
     AdaptivePlanResponse
 )
+from app.core.auth import get_current_user_id
 
 router = APIRouter(prefix="/progress", tags=["progress"])
 
 @router.get("/summary", response_model=ProgressSummaryResponse)
-def get_progress_summary(user_id: str = "default", db: Session = Depends(get_db)):
+def get_progress_summary(request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user_id(request)
     repo = ProgressRepository(db)
     data = repo.get_summary(user_id)
     return ProgressSummaryResponse(**data)
 
 @router.get("/weekly", response_model=list[DailyStatItem])
-def get_weekly_progress(user_id: str = "default", db: Session = Depends(get_db)):
+def get_weekly_progress(request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user_id(request)
     repo = ProgressRepository(db)
     items = repo.get_weekly_stats(user_id)
     return [DailyStatItem(**item) for item in items]
 
 @router.get("/adaptive-plan", response_model=AdaptivePlanResponse)
-async def get_adaptive_daily_plan(user_id: str = "default", db: Session = Depends(get_db)):
+async def get_adaptive_daily_plan(request: Request, db: Session = Depends(get_db)):
+    user_id = get_current_user_id(request)
     mistake_repo = MistakeRepository(db)
     session_repo = SessionRepository(db)
 
@@ -44,7 +48,7 @@ async def get_adaptive_daily_plan(user_id: str = "default", db: Session = Depend
     ]
 
     # 2. Fetch recent topics
-    recent_sessions = session_repo.list_recent(limit=5)
+    recent_sessions = session_repo.list_recent(limit=5, user_id=user_id)
     recent_topics = [s.topic for s in recent_sessions if s.topic]
 
     # 3. Generate adaptive plan with Ollama

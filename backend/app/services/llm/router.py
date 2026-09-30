@@ -26,6 +26,7 @@ class ModelRouter:
         preference = opts.get("preference", settings.MODEL_ROUTING_PREFERENCE)
         force_cloud = opts.get("force_cloud", False) or opts.get("high_quality", False)
         local_only = opts.get("local_only", False)
+        cloud_fallback_allowed = opts.get("cloud_fallback", True)
         
         start_time = time.time()
         fallback_triggered = False
@@ -90,7 +91,7 @@ class ModelRouter:
             logger.warning(f"Ollama failed or timed out ({ollama_err}). Evaluating cloud fallback...")
 
             # Fallback to DeepSeek if enabled
-            if settings.DEEPSEEK_ENABLED and (await self.deepseek.is_available()):
+            if cloud_fallback_allowed and settings.DEEPSEEK_ENABLED and (await self.deepseek.is_available()):
                 logger.info("Triggering automatic DeepSeek cloud fallback...")
                 try:
                     reply = await self.deepseek.chat(messages, opts)

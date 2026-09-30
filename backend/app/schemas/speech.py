@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from app.schemas.pronunciation import PronunciationReportResponse
 
 class AudioMetrics(BaseModel):
     wpm: float
@@ -13,3 +14,4 @@ class TranscribeResponse(BaseModel):
     language: str = "en"
     metrics: AudioMetrics
     turn_id: str | None = None
+    pronunciation: PronunciationReportResponse | None = None

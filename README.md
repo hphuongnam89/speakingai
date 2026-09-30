@@ -29,13 +29,23 @@
    .\venv\Scripts\python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
    ```
 
+   Backend gửi `num_ctx=4096` và `think=false` cho coach Ornith để tránh dùng
+   context mặc định quá lớn hoặc chờ model suy luận dài. Timeout là 120 giây;
+   giới hạn trả lời mặc định 1024 token, đủ cho sửa lỗi và báo cáo IELTS.
+   Có thể chỉnh qua `OLLAMA_CONTEXT_LENGTH`, `OLLAMA_THINK`, `OLLAMA_TIMEOUT`
+   và `OLLAMA_MAX_OUTPUT_TOKENS` trong `backend/.env`.
+   Khi chạy nhiều ứng dụng AI cùng máy, tránh cấu hình Ollama mặc định
+   131072 token × 4 lượt song song vì có thể chiếm hết RAM/VRAM.
+
 4. **Kiểm tra hoạt động**:
+   - Giao diện web luyện nói: [http://localhost:8000](http://localhost:8000) — bắt đầu buổi trò chuyện hoặc IELTS Part 2, gõ câu trả lời hay cho phép microphone để ghi âm.
    - Swagger API Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
    - Health check: [http://localhost:8000/api/v1/health](http://localhost:8000/api/v1/health)
-   - Chạy test full flow hội thoại:
+   - Chạy bộ test backend (không cần bật Ollama; test dùng model giả ổn định và database tạm):
      ```bash
-     .\venv\Scripts\python tests/test_full_flow.py
+     .\venv\Scripts\python -m pytest tests -q
      ```
+   - Muốn thử câu trả lời AI thật, khởi động Ollama và kiểm tra hội thoại qua app/API sau khi bộ test hợp đồng chạy qua.
 
 ---
 
@@ -58,6 +68,22 @@
   - Chọn preset: `http://10.0.2.2:8000/` $\rightarrow$ bấm **Test Connection** (sẽ hiện `Connected (ornith-1.5:9b)` màu xanh).
 - **Nếu chạy trên điện thoại thật cắm dây / cùng Wifi**:
   - Nhập địa chỉ IP máy tính trong mạng LAN (ví dụ: `http://192.168.1.15:8000/`) $\rightarrow$ bấm **Test Connection**.
+
+### Triển khai production bằng Docker
+- Sao chép `.env.example` thành `.env`, đặt `ENVIRONMENT=production`, tạo `API_KEY` và `AUTH_SECRET` bằng hai secret ngẫu nhiên riêng biệt (mỗi secret tối thiểu 32 ký tự), rồi thay `CORS_ORIGINS` bằng đúng origin được phép.
+- Cấu hình chứng chỉ TLS tại `docker/ssl/fullchain.pem` và `docker/ssl/privkey.pem`, sau đó bật Nginx TLS bằng profile `proxy`:
+  ```bash
+  docker compose --profile proxy up -d --build
+  ```
+- Nếu cần chấm phát âm thử nghiệm bằng mô hình tiếng Anh, cấu hình `PRONUNCIATION_ASSESSOR_URL=http://pronunciation-assessor:9000` rồi bật thêm profile `pronunciation` (ví dụ: `docker compose --profile proxy --profile pronunciation up -d --build`). Mô hình tải về khi chạy lần đầu và cần dung lượng/CPU đáng kể.
+- Với Android release, cấu hình ký bằng `ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Người học đăng nhập bằng tài khoản; không đưa `API_KEY` hoặc `AUTH_SECRET` vào APK. Bản release chặn HTTP không mã hóa.
+- Trong Settings, người học có thể tạo tài khoản/đăng nhập để đồng bộ phiên học, sổ tay lỗi và tiến trình giữa thiết bị. Tài khoản hiện chưa có xác minh email hoặc khôi phục mật khẩu; dùng trên hệ thống production cần cấu hình quy trình này trước khi mở đăng ký công khai.
+- GitHub Actions tự build backend image và Android debug APK khi push/PR lên `main`. Deploy thủ công cần tạo GitHub Actions secrets `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_PATH`, `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`; máy chủ phải có checkout repo, file `.env`, Docker Compose, chứng chỉ TLS và quyền pull repo.
+- Có thể bật crash reporting trên backend bằng `SENTRY_DSN` và trên Android bằng GitHub Actions variable `SENTRY_ANDROID_DSN`. Cả hai tắt PII; Android cũng tắt screenshot, view hierarchy và breadcrumb tương tác. Cần công bố thông báo quyền riêng tư phù hợp trước khi bật gửi telemetry.
+
+## 🧪 3. Kiểm thử người học
+
+Sau khi cài Android debug app và kết nối backend, dùng [pilot checklist](docs/13_PILOT_TEST_CHECKLIST.md) để quan sát 3–5 người học hoàn thành một lượt luyện. Backend CI dùng model giả cho kết quả ổn định; pilot kiểm tra phản hồi AI thật và trải nghiệm trên thiết bị.
 
 ---
 
@@ -128,31 +154,13 @@
 
 ---
 
-## 🎙️ 7. Tính năng Phase 5: Phân tích phát âm & Luyện âm chuyên sâu (Pronunciation Engine)
+## 🎙️ 7. Tính năng Phase 5: Phát âm
 
-- **Nguyên tắc chất lượng**: Phân tích phát âm trực tiếp từ tín hiệu âm học và nhận dạng tiếng nói, không phán đoán phát âm mù chỉ qua văn bản chữ.
-- **Chấm điểm chi tiết từng từ (Word-Level Confidence & Timestamps)**:
-  - Đo độ tin cậy âm học (0.0 – 1.0) cho từng từ được nói ra.
-  - Tự động gắn nhãn `needs_review: true` khi từ có độ tự tin thấp (< 0.80) hoặc gặp lỗi phát âm âm cuối, phụ âm đôi.
-- **Từ điển ngữ âm & Phiên âm quốc tế IPA chuẩn**:
-  - Tra cứu và sinh phiên âm IPA chuẩn xác (ví dụ: `enjoyed` $\rightarrow$ `/ɪnˈdʒɔɪd/`, `technology` $\rightarrow$ `/tɛkˈnɒlədʒi/`).
-  - Bẻ từ theo âm tiết (Syllable breakdown) và đánh dấu trọng âm chính (`en - JOYED`, `tech - NOL - o - gy`).
-  - Đưa ra lời khuyên âm học cụ thể (Phonetic Feedback Tip).
-- **Phân tích nhịp điệu & ngắt nghỉ (Rhythm Metrics)**:
-  - Tốc độ phát âm (WPM).
-  - Đếm số lần ngắt nghỉ bất thường (`pause_count`) và tỷ lệ thời gian im lặng (`pause_duration_ratio`).
-  - Điểm nhịp điệu tổng thể (`rhythm_consistency_score`).
-- **Giao diện Android tương tác 1 chạm (Interactive Pronunciation Drill)**:
-  - **Tô màu từ trực quan**: Các từ cần chú ý được hiển thị màu hổ phách/cam kèm biểu tượng cảnh báo `⚠️`.
-  - **Hộp thoại luyện âm (Pronunciation Drill Dialog)**:
-    - Bấm vào từ bất kỳ trên bóng hội thoại để mở bảng phân tích ngữ âm chi tiết.
-    - Nút **"🔊 Listen"**: Nghe AI đọc mẫu chuẩn chậm và rõ ràng.
-    - Nút **"🎙️ Practice"**: Luyện nói lại từ và nhận ngay điểm số tức thì kèm phân loại (Excellent / Good / Needs Practice) và câu mẫu ứng dụng.
+- **Đã có**: Whisper trả về timestamp và confidence nhận dạng cho từng từ; app dùng dữ liệu này để đánh dấu transcript có thể chưa chính xác. Đây không phải điểm phát âm.
+- **Tra cứu IPA**: Từ điển cung cấp phiên âm, âm tiết, trọng âm và gợi ý luyện tập.
+- **Chấm phát âm thử nghiệm (tùy chọn)**: Profile Docker `pronunciation` bật OpenPronounce để trả điểm âm thanh và lỗi âm vị tiếng Anh. Điểm này chưa được hiệu chuẩn cho IELTS hoặc người Việt, có thể báo lỗi sai và không phải band IELTS; nếu sidecar không bật/không sẵn sàng, API chỉ trả dữ liệu nhận dạng.
+- **Bài luyện**: Hướng dẫn luyện tập chưa chấm âm thanh từng từ.
 - **Endpoints Backend**:
-  - `POST /api/v1/pronunciation/analyze`: Phân tích phát âm chi tiết cho đoạn nói.
-  - `GET /api/v1/pronunciation/dictionary/{word}`: Tra cứu phiên âm IPA, âm tiết, trọng âm và mẹo phát âm của từ.
-  - `POST /api/v1/pronunciation/drill`: Chấm điểm bài luyện phát âm từng từ/cụm từ.
-
-
-
-
+  - `POST /api/v1/pronunciation/analyze`: Tổng hợp confidence/timestamp nếu có; transcript đơn thuần không tạo điểm phát âm.
+  - `GET /api/v1/pronunciation/dictionary/{word}`: Tra cứu phiên âm IPA, âm tiết, trọng âm và mẹo phát âm.
+  - `POST /api/v1/pronunciation/drill`: Trả về hướng dẫn luyện tập, chưa chấm điểm âm thanh.

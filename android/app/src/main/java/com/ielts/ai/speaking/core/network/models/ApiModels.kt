@@ -2,6 +2,13 @@ package com.ielts.ai.speaking.core.network.models
 
 import com.google.gson.annotations.SerializedName
 
+data class AuthRequest(val email: String, val password: String)
+data class AuthResponse(
+    @SerializedName("access_token") val accessToken: String,
+    @SerializedName("expires_in") val expiresIn: Int,
+    @SerializedName("user_id") val userId: String
+)
+
 data class SessionCreateRequest(
     val mode: String,
     val topic: String? = null
@@ -127,7 +134,8 @@ data class ModelSelectRequest(
 
 data class TranscribeResponse(
     val text: String,
-    val error: String? = null
+    val error: String? = null,
+    val pronunciation: PronunciationReportDto? = null
 )
 
 // Phase 3: IELTS Speaking Models
@@ -218,7 +226,7 @@ data class AdaptivePlanDto(
 data class WordPronunciationDto(
     val word: String,
     @SerializedName("expected_ipa") val expectedIpa: String,
-    val confidence: Float,
+    val confidence: Float? = null,
     val start: Float? = null,
     val end: Float? = null,
     @SerializedName("needs_review") val needsReview: Boolean = false,
@@ -228,10 +236,10 @@ data class WordPronunciationDto(
 )
 
 data class RhythmMetricsDto(
-    @SerializedName("speech_rate_wpm") val speechRateWpm: Float,
-    @SerializedName("pause_count") val pauseCount: Int,
-    @SerializedName("pause_duration_ratio") val pauseDurationRatio: Float,
-    @SerializedName("rhythm_consistency_score") val rhythmConsistencyScore: Float
+    @SerializedName("speech_rate_wpm") val speechRateWpm: Float? = null,
+    @SerializedName("pause_count") val pauseCount: Int? = null,
+    @SerializedName("pause_duration_ratio") val pauseDurationRatio: Float? = null,
+    @SerializedName("rhythm_consistency_score") val rhythmConsistencyScore: Float? = null
 )
 
 data class PronunciationAnalysisRequest(
@@ -241,27 +249,34 @@ data class PronunciationAnalysisRequest(
 )
 
 data class PronunciationReportDto(
-    @SerializedName("overall_score") val overallScore: Float,
-    @SerializedName("estimated_band") val estimatedBand: Float,
+    @SerializedName("recognition_confidence") val recognitionConfidence: Float? = null,
+    @SerializedName("pronunciation_score") val pronunciationScore: Float? = null,
+    @SerializedName("pronunciation_errors") val pronunciationErrors: List<PronunciationErrorDto> = emptyList(),
+    val scorer: String? = null,
     @SerializedName("word_count") val wordCount: Int,
     val words: List<WordPronunciationDto> = emptyList(),
     @SerializedName("problem_words") val problemWords: List<WordPronunciationDto> = emptyList(),
     val rhythm: RhythmMetricsDto? = null,
     @SerializedName("feedback_summary") val feedbackSummary: String,
-    val disclaimer: String = "Acoustic assessment based on speech recognition confidence and phonetic alignment."
+    val disclaimer: String = "Whisper confidence is not pronunciation accuracy. Optional OpenPronounce scoring is experimental and is not an IELTS result."
+)
+
+data class PronunciationErrorDto(
+    val word: String,
+    @SerializedName("expected_ipa") val expectedIpa: String,
+    @SerializedName("heard_ipa") val heardIpa: String,
+    val confidence: Float? = null
 )
 
 data class PronunciationDrillRequest(
-    @SerializedName("target_word") val targetWord: String,
-    @SerializedName("user_spoken_text") val userSpokenText: String? = null,
-    @SerializedName("audio_confidence") val audioConfidence: Float? = null
+    @SerializedName("target_word") val targetWord: String
 )
 
 data class PronunciationDrillResponseDto(
     val word: String,
     @SerializedName("expected_ipa") val expectedIpa: String,
     val syllables: List<String> = emptyList(),
-    val score: Float,
+    val score: Float? = null,
     val accuracy: String,
     val tips: List<String> = emptyList(),
     @SerializedName("sample_sentence") val sampleSentence: String

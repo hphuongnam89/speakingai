@@ -13,7 +13,13 @@ class OllamaProvider(LLMProvider):
         payload = {
             "model": model,
             "messages": messages,
-            "stream": False
+            "stream": False,
+            "think": (options or {}).get("think", settings.OLLAMA_THINK),
+            "options": {
+                "num_ctx": settings.OLLAMA_CONTEXT_LENGTH,
+                "num_predict": (options or {}).get("max_tokens", settings.OLLAMA_MAX_OUTPUT_TOKENS),
+                "temperature": 0.4,
+            },
         }
         
         try:
@@ -21,9 +27,22 @@ class OllamaProvider(LLMProvider):
                 response = await client.post(url, json=payload)
                 response.raise_for_status()
                 data = response.json()
-                return data.get("message", {}).get("content", "")
+                logger.info(
+                    "Ollama completed model=%s reason=%s output_tokens=%s duration_ms=%s",
+                    model, data.get("done_reason"), data.get("eval_count"),
+                    round(data.get("total_duration", 0) / 1e6),
+                )
+                content = data.get("message", {}).get("content", "").strip()
+                if not content:
+                    raise RuntimeError(f"Ollama returned an empty reply for model {model}")
+                if data.get("done_reason") == "length":
+                    raise RuntimeError("Ollama reply was cut short. Please try a shorter answer.")
+                return content
+        except httpx.TimeoutException as e:
+            logger.warning("Ollama request timed out after %s seconds", timeout)
+            raise TimeoutError(f"Ollama request timed out after {timeout} seconds") from e
         except Exception as e:
-            logger.error(f"Ollama chat error: {e}")
+            logger.exception("Ollama chat failed (%s): %s", type(e).__name__, e)
             raise
 
     async def is_available(self) -> bool:
@@ -46,8 +65,8 @@ class OllamaProvider(LLMProvider):
                 if res.status_code == 200:
                     models = [m.get("name") for m in res.json().get("models", [])]
                     return {
-                        "available": True,
-                        "error": None,
+                        "available": settings.OLLAMA_MODEL in models,
+                        "error": None if settings.OLLAMA_MODEL in models else "Configured model is not installed",
                         "latency_ms": latency,
                         "model": settings.OLLAMA_MODEL,
                         "installed_models": models

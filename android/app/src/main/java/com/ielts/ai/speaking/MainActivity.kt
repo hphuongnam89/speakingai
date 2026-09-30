@@ -21,10 +21,12 @@ import com.ielts.ai.speaking.ui.screens.conversation.ConversationScreen
 import com.ielts.ai.speaking.ui.screens.home.HomeScreen
 import com.ielts.ai.speaking.ui.screens.settings.SettingsScreen
 import com.ielts.ai.speaking.ui.theme.IeltsSpeakingAiTheme
+import com.ielts.ai.speaking.core.network.ApiClient
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ApiClient.initialize(applicationContext)
         setContent {
             IeltsSpeakingAiTheme {
                 // Request audio permission at launch if not granted

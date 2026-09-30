@@ -29,8 +29,6 @@ def get_word_phonetics(word: str):
 def evaluate_drill(request: PronunciationDrillRequest):
     service = get_pronunciation_service()
     res = service.evaluate_drill(
-        target_word=request.target_word,
-        user_spoken_text=request.user_spoken_text,
-        audio_confidence=request.audio_confidence
+        target_word=request.target_word
     )
     return res

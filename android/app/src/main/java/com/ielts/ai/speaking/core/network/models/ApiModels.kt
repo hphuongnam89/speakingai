@@ -46,6 +46,8 @@ data class ConversationResponse(
     val message: String,
     val corrections: List<CorrectionDto> = emptyList(),
     @SerializedName("repeat_prompt") val repeatPrompt: String? = null,
+    @SerializedName("session_focus") val sessionFocus: String? = null,
+    @SerializedName("self_assessment_prompt") val selfAssessmentPrompt: String? = null,
     @SerializedName("tts_text") val ttsText: String?,
     @SerializedName("turn_id") val turnId: String?,
     val pronunciation: PronunciationReportDto? = null,
@@ -59,6 +61,10 @@ data class CorrectionDto(
     val corrected: String,
     val explanation: String,
     val category: String = "grammar",
+    @SerializedName("error_type") val errorType: String = "grammar",
+    val subtype: String = "general",
+    val severity: String = "important",
+    @SerializedName("practice_prompt") val practicePrompt: String = "Say the corrected sentence in your own words.",
     @SerializedName("should_repeat") val shouldRepeat: Boolean = false
 )
 
@@ -68,6 +74,8 @@ data class MistakeDto(
     @SerializedName("session_id") val sessionId: String?,
     @SerializedName("turn_id") val turnId: String?,
     val category: String,
+    @SerializedName("error_type") val errorType: String = "grammar",
+    val subtype: String = "general",
     @SerializedName("original_text") val originalText: String,
     @SerializedName("corrected_text") val correctedText: String,
     val explanation: String?,
@@ -75,13 +83,23 @@ data class MistakeDto(
     @SerializedName("first_seen_at") val firstSeenAt: String? = null,
     @SerializedName("last_seen_at") val lastSeenAt: String? = null,
     @SerializedName("occurrence_count") val occurrenceCount: Int = 1,
-    val resolved: Boolean = false
+    val resolved: Boolean = false,
+    @SerializedName("successful_reuse_count") val successfulReuseCount: Int = 0,
+    @SerializedName("next_review_at") val nextReviewAt: String? = null,
+    @SerializedName("mastery_state") val masteryState: String = "learning",
+    @SerializedName("example_sentence") val exampleSentence: String? = null
 )
 
 data class MistakeResolveResponse(
     val id: String,
     val resolved: Boolean
 )
+
+data class MistakeReviewRequest(val success: Boolean)
+data class RepeatCheckRequest(@SerializedName("expected_text") val expectedText: String, @SerializedName("actual_text") val actualText: String)
+data class RepeatCheckResponse(val passed: Boolean, val similarity: Float, val feedback: String)
+data class ProfileDto(val id: String, val name: String, @SerializedName("is_active") val isActive: Boolean = false)
+data class EvaluationFeedbackRequest(val flag: String, val comment: String? = null)
 
 data class UserSettingsDto(
     @SerializedName("user_id") val userId: String,
@@ -194,7 +212,14 @@ data class IeltsEvaluationResponse(
     @SerializedName("areas_for_improvement") val areasForImprovement: List<String> = emptyList(),
     @SerializedName("suggested_expressions") val suggestedExpressions: List<SuggestedExpressionDto> = emptyList(),
     @SerializedName("examiner_summary") val examinerSummary: String,
-    val disclaimer: String = "Estimated score — not an official IELTS result."
+    val disclaimer: String = "Estimated score — not an official IELTS result.",
+    @SerializedName("score_status") val scoreStatus: String = "provisional",
+    val confidence: Float = 0f,
+    @SerializedName("confidence_range") val confidenceRange: String = "calibration pending",
+    val limitation: String = "Pronunciation is not scored from transcript alone.",
+    @SerializedName("scoring_version") val scoringVersion: String = "phase8-v1",
+    @SerializedName("model_id") val modelId: String? = null,
+    @SerializedName("prompt_version") val promptVersion: String = "ielts-evaluation-v1"
 )
 
 // Phase 4: Progress & Adaptive Learning Models
@@ -281,7 +306,4 @@ data class PronunciationDrillResponseDto(
     val tips: List<String> = emptyList(),
     @SerializedName("sample_sentence") val sampleSentence: String
 )
-
-
-
 

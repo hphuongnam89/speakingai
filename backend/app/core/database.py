@@ -35,6 +35,8 @@ def get_db():
 def init_db():
     import app.models  # noqa: F401
     Base.metadata.create_all(bind=engine)
+    from app.migrations.runner import run_migrations
+    run_migrations()
     # create_all creates missing tables but deliberately does not evolve tables
     # created by earlier app versions. Keep these small additive migrations so
     # existing SQLite and PostgreSQL databases can start without manual reset.
@@ -56,4 +58,3 @@ def init_db():
                     connection.execute(text(
                         f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}"
                     ))
-

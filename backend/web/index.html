@@ -4,10 +4,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f6f5ef" />
-    <meta name="description" content="Luyện IELTS Speaking cùng AI coach chạy trên Ollama local." />
+    <meta name="description" content="Luyện IELTS Speaking cùng AI coach chạy trên Ollama local với lộ trình cá nhân hóa." />
     <title>Speakwell — IELTS Speaking Coach</title>
-    <link rel="stylesheet" href="/static/styles.css" />
-    <script src="/static/app.js" defer></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/styles.css?v=7.9" />
+    <script src="/static/app.js?v=7.9" defer></script>
   </head>
   <body>
     <div class="site-shell">
@@ -16,6 +19,26 @@
           <span class="brand-mark" aria-hidden="true">s.</span>
           <span class="brand-name">speakwell<span> / SPEAKING COACH</span></span>
         </a>
+
+        <!-- Profile Bar Button -->
+        <div class="profile-header-widget">
+          <button id="profile-toggle-btn" class="profile-pill-btn" type="button" title="Chuyển đổi hồ sơ người học">
+            <span id="top-avatar" class="avatar-badge">N</span>
+            <span id="top-profile-name" class="top-name">Học viên</span>
+            <span id="top-profile-band" class="top-band-tag">Chưa test</span>
+            <span class="caret">▾</span>
+          </button>
+        </div>
+
+        <!-- History Bar Button -->
+        <div class="history-header-widget">
+          <button id="open-history-btn" class="profile-pill-btn history-pill-btn" type="button" title="Xem lịch sử các buổi luyện tập">
+            <span class="history-icon" aria-hidden="true">📚</span>
+            <span class="top-name">Lịch sử bài luyện</span>
+            <span id="top-history-badge" class="history-badge-count">0</span>
+          </button>
+        </div>
+
         <div id="connection-status" class="connection-status is-checking" role="status" aria-live="polite">
           <span class="status-dot"></span><span id="connection-label">Đang kết nối AI local…</span>
         </div>
@@ -24,12 +47,27 @@
       <main>
         <section class="intro-row">
           <div>
-            <p class="eyebrow">YOUR DAILY SPEAKING PRACTICE</p>
-            <h1>Nói tự tin hơn,<br /><em>từng câu một.</em></h1>
-            <p class="intro-copy">Luyện nói tiếng Anh với AI coach chạy trên máy của bạn. Không cần tài khoản để bắt đầu.</p>
+            <p id="learner-welcome-eyebrow" class="eyebrow">YOUR DAILY SPEAKING PRACTICE</p>
+            <h1 id="learner-welcome-title">Nói tự tin hơn,<br /><em>từng câu một.</em></h1>
+            <p id="learner-welcome-desc" class="intro-copy">Luyện nói tiếng Anh với AI coach chạy trực tiếp trên máy của bạn (Ollama). Dữ liệu được ghi nhớ theo từng hồ sơ học viên.</p>
           </div>
-          <div class="streak-note"><span class="streak-icon">✳</span><span>Chậm lại.<br />Nói rõ ý mình.</span></div>
+          <div class="streak-note">
+            <span class="streak-icon">✳</span>
+            <div>
+              <strong id="streak-counter">0 ngày</strong> liên tục<br />
+              <span id="streak-sub">Mỗi ngày tích lũy từng chút một.</span>
+            </div>
+          </div>
         </section>
+
+        <!-- Banner nhắc kiểm tra đầu vào nếu chưa test -->
+        <div id="placement-alert-banner" class="placement-banner hidden">
+          <div class="banner-text">
+            <strong>🎯 Bạn chưa làm bài kiểm tra trình độ đầu vào!</strong>
+            <p>Làm bài kiểm tra nhanh 3 câu (3 phút) để nhận ước lượng luyện tập tạm thời và sinh lộ trình 3 tháng phù hợp.</p>
+          </div>
+          <button id="start-placement-btn" class="banner-action-btn" type="button">Kiểm tra trình độ ngay ↗</button>
+        </div>
 
         <section class="workspace" aria-label="Khu vực luyện nói">
           <div class="practice-panel">
@@ -38,7 +76,10 @@
                 <p class="eyebrow">PRACTICE ROOM</p>
                 <h2>Buổi luyện nói</h2>
               </div>
-              <button id="new-session" class="text-button hidden" type="button">＋ Buổi mới</button>
+              <div class="panel-heading-actions">
+                <button id="view-history-action-btn" class="secondary-button history-action-btn" type="button" title="Xem lịch sử các buổi luyện tập">📚 Lịch sử bài luyện</button>
+                <button id="new-session" class="text-button hidden" type="button">＋ Buổi mới</button>
+              </div>
             </div>
 
             <div id="welcome-state" class="welcome-state">
@@ -47,10 +88,62 @@
                 <span class="orbit orbit-one"></span><span class="orbit orbit-two"></span>
               </div>
               <p class="eyebrow">A LITTLE PRACTICE GOES A LONG WAY</p>
-              <h3>Sẵn sàng nói chưa?</h3>
-              <p>Chọn một chủ đề, bắt đầu bằng giọng nói hoặc gõ câu trả lời. AI sẽ phản hồi và chỉ ra điểm bạn có thể cải thiện.</p>
-              <button id="welcome-start" class="primary-button" type="button">Bắt đầu luyện <span aria-hidden="true">↗</span></button>
-              <span id="speech-note" class="privacy-note">Đang kiểm tra khả năng ghi âm…</span>
+              <h3 id="session-greeting">Sẵn sàng nói chưa?</h3>
+              <p id="session-memory-note">Chọn một chủ đề bên dưới hoặc đổi ngẫu nhiên, sau đó bấm bắt đầu. AI sẽ dẫn dắt câu hỏi và phản hồi cá nhân hóa.</p>
+
+              <!-- Thẻ mở lại bài luyện gần nhất -->
+              <div id="recent-session-alert" class="recent-session-alert hidden">
+                <div class="recent-session-info">
+                  <span class="recent-tag">⏱️ BÀI LUYỆN GẦN NHẤT</span>
+                  <strong id="recent-session-title">A memorable weekend</strong>
+                  <span id="recent-session-meta" class="recent-meta">12 phút · 35 câu nói</span>
+                </div>
+                <button id="resume-recent-btn" class="primary-button resume-btn" type="button">Xem lại &amp; Nghe lại bài này ↗</button>
+              </div>
+
+              <!-- BỘ CHỌN & ĐỔI CHỦ ĐỀ TRỰC QUAN -->
+              <div class="topic-picker-container">
+                <div class="topic-picker-header">
+                  <div class="topic-current-badge">
+                    <span class="topic-dot"></span>
+                    <span id="welcome-topic-category-label">IELTS PART 1 · PHẢN XẠ NHANH</span>
+                  </div>
+                  <button id="welcome-shuffle-topic-btn" class="shuffle-topic-btn" type="button" title="Đổi chủ đề IELTS ngẫu nhiên">
+                    <span class="shuffle-icon" aria-hidden="true">🎲</span> Đổi chủ đề ngẫu nhiên
+                  </button>
+                </div>
+
+                <div class="topic-active-card">
+                  <div class="topic-title-row">
+                    <h4 id="welcome-topic-title">Hometown &amp; Living Area</h4>
+                    <span id="welcome-topic-tag" class="topic-pill-tag">Part 1</span>
+                  </div>
+                  <p id="welcome-topic-vi" class="topic-vi-desc">Quê hương, nơi sinh sống và môi trường xung quanh</p>
+                  <div class="topic-question-preview">
+                    <span class="quote-symbol">“</span>
+                    <span id="welcome-topic-question">Where is your hometown located, and what do you like most about living there?</span>
+                  </div>
+                </div>
+
+                <!-- Thẻ chọn nhanh danh mục / chủ đề hot -->
+                <div class="topic-chips-shelf" id="welcome-topic-chips" role="tablist" aria-label="Gợi ý chủ đề nhanh">
+                  <!-- Render động bằng JS -->
+                </div>
+
+                <!-- Ô nhập chủ đề tự chọn -->
+                <div id="custom-topic-box" class="custom-topic-box hidden">
+                  <label for="custom-topic-input" class="custom-topic-label">Nhập chủ đề bạn muốn luyện hôm nay:</label>
+                  <div class="custom-topic-input-row">
+                    <input id="custom-topic-input" type="text" class="custom-topic-field" placeholder="Ví dụ: Coffee shops in Vietnam, Electric vehicles, Artificial intelligence..." maxlength="100" />
+                    <button id="apply-custom-topic-btn" class="apply-topic-btn" type="button">Áp dụng</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="welcome-actions">
+                <button id="welcome-start" class="primary-button topic-start-btn" type="button">Bắt đầu luyện chủ đề này <span aria-hidden="true">↗</span></button>
+              </div>
+              <span id="speech-note" class="privacy-note">🔒 Âm thanh được xử lý cục bộ bằng AI (Whisper) và lưu tạm 72h phục vụ phân tích. Bạn có thể xóa bất kỳ lúc nào trong Cài đặt.</span>
             </div>
 
             <div id="cue-card" class="cue-card hidden"></div>
@@ -58,11 +151,22 @@
             <div id="result-card" class="result-card hidden"></div>
 
             <form id="composer" class="composer hidden">
+              <div class="composer-toolbar">
+                <div class="stt-engine-picker">
+                  <span class="stt-icon" aria-hidden="true">🎙️</span>
+                  <label for="stt-engine-select" class="stt-label">Công nghệ STT:</label>
+                  <select id="stt-engine-select" class="stt-select" title="Chọn công nghệ nhận diện giọng nói">
+                    <option value="whisper" selected>🌟 Whisper AI — transcript practice (confidence không phải điểm phát âm)</option>
+                    <option value="webspeech">⚡ Chrome Web Speech (Streaming trực tiếp từng từ)</option>
+                  </select>
+                </div>
+              </div>
               <label class="sr-only" for="answer">Câu trả lời tiếng Anh</label>
               <textarea id="answer" rows="2" placeholder="Type your answer in English…" maxlength="4000"></textarea>
               <div class="composer-footer">
                 <span id="composer-hint">Enter để gửi · Shift + Enter để xuống dòng</span>
                 <div class="composer-actions">
+                  <span id="recording-timer" class="recording-timer hidden">00:00</span>
                   <button id="record-button" class="record-button" type="button" aria-label="Ghi âm câu trả lời">
                     <span class="mic-icon" aria-hidden="true">●</span><span id="record-label">Ghi âm</span>
                   </button>
@@ -74,15 +178,69 @@
           </div>
 
           <aside class="guide-panel">
-            <div class="guide-topline"><span class="guide-symbol">✳</span><span>YOUR SESSION</span></div>
-            <label class="field-label" for="practice-mode">Hôm nay mình sẽ</label>
-            <select id="practice-mode" class="select-field">
-              <option value="daily">Trò chuyện tự do</option>
-              <option value="part2">Luyện IELTS Speaking Part 2</option>
+            <!-- Widget Mục tiêu hôm nay & Lộ trình -->
+            <div class="profile-card-widget">
+              <div class="widget-header">
+                <span class="guide-symbol">✳</span>
+                <span class="widget-title">HỒ SƠ HỌC VIÊN</span>
+              </div>
+              <div class="profile-stat-box">
+                <div class="stat-line">
+                  <span>Người học:</span>
+                  <strong id="side-profile-name">Học viên 1</strong>
+                </div>
+                <div class="stat-line">
+                  <span>Trình độ:</span>
+                  <strong id="side-profile-level" class="level-highlight">Band 4.5 → 7.0</strong>
+                </div>
+                <div class="daily-progress-container">
+                  <div class="progress-labels">
+                    <span>Hôm nay:</span>
+                    <strong id="daily-minutes-label">0 / 20 phút</strong>
+                  </div>
+                  <div class="progress-track">
+                    <div id="daily-minutes-bar" class="progress-fill" style="width: 0%;"></div>
+                  </div>
+                </div>
+                <div id="roadmap-summary-box" class="roadmap-summary-box">
+                  <span id="roadmap-phase-title" class="phase-tag">Lộ trình 3 tháng</span>
+                  <p id="roadmap-phase-focus" class="phase-focus">Chưa có bài test đầu vào.</p>
+                  <div class="roadmap-btn-row">
+                    <button id="view-roadmap-btn" class="link-btn hidden" type="button">Xem chi tiết lộ trình →</button>
+                    <button id="edit-roadmap-btn" class="secondary-button small-edit-btn" type="button">✏️ Chỉnh sửa lộ trình</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="guide-divider"></div>
+
+            <div class="guide-topline"><span class="guide-symbol">🎙️</span><span>CẤU HÌNH BUỔI NÓI</span></div>
+            <label class="field-label" for="llm-model-select">Trí tuệ nhân tạo (AI Model)</label>
+            <select id="llm-model-select" class="select-field">
+              <option value="smtek/Qwen3.8-27B:Q3_K_XL-16gb" selected>🧠 Qwen 3.8 (27B) — Giám khảo Band 9.0 chuyên sâu</option>
+              <option value="qwen3.5:4b">⚡ Qwen 3.5 (4B) — Phản xạ siêu nhanh</option>
+              <option value="gemma4:12b">✨ Gemma 4 (12B) — Logic & ngữ pháp</option>
             </select>
 
-            <label class="field-label" for="topic">Chủ đề luyện nói</label>
-            <input id="topic" class="text-field" value="A memorable weekend" maxlength="100" />
+            <label class="field-label" for="practice-mode">Chế độ luyện tập</label>
+            <select id="practice-mode" class="select-field">
+              <option value="daily">Trò chuyện theo lộ trình (Daily Practice)</option>
+              <option value="part1">Luyện IELTS Speaking Part 1 (Phản xạ ngắn)</option>
+              <option value="part2">Luyện IELTS Speaking Part 2 (Cue Card 2 phút)</option>
+              <option value="part3">Luyện IELTS Speaking Part 3 (Thảo luận sâu)</option>
+              <option value="freetalk">Trò chuyện tự do (Free Talk)</option>
+              <option value="fixmyenglish">Sửa lỗi gắt gao (Fix My English)</option>
+            </select>
+
+            <div class="field-label-row">
+              <label class="field-label" for="topic-select">Chủ đề luyện nói</label>
+              <button id="side-shuffle-btn" class="mini-text-action" type="button" title="Đổi chủ đề ngẫu nhiên">🎲 Đổi ngẫu nhiên</button>
+            </div>
+            <select id="topic-select" class="select-field">
+              <!-- Sẽ render động các nhóm chủ đề IELTS & lộ trình -->
+            </select>
+            <input id="topic" class="text-field" value="Hometown & Living Area" maxlength="100" style="margin-top: 6px;" placeholder="Hoặc tự gõ chủ đề tùy thích..." />
             <button id="start-session" class="start-button" type="button">Tạo buổi luyện <span aria-hidden="true">→</span></button>
 
             <div class="guide-divider"></div>
@@ -92,7 +250,7 @@
 
             <div class="mini-status">
               <span class="mini-status-icon">↗</span>
-              <div><strong>AI feedback</strong><span>Điểm IELTS chỉ mang tính ước lượng.</span></div>
+              <div><strong>Local AI Coach</strong><span>Dữ liệu lưu 100% trên máy nội bộ.</span></div>
             </div>
             <a class="docs-link" href="/docs" target="_blank" rel="noreferrer">API docs <span aria-hidden="true">↗</span></a>
           </aside>
@@ -100,5 +258,303 @@
         <footer class="page-footer"><span>Speakwell · Local AI speaking practice</span><span>Practice makes progress.</span></footer>
       </main>
     </div>
+
+    <!-- MODAL QUẢN LÝ HỒ SƠ (PROFILE MODAL) -->
+    <div id="profile-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3>Hồ sơ người học trên máy</h3>
+          <button id="close-profile-modal-btn" class="close-btn" type="button">✕</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-subtitle">Nhiều người có thể cùng luyện nói trên máy tính này. Mỗi hồ sơ lưu riêng lịch sử, mục tiêu và sổ tay lỗi.</p>
+          
+          <div id="profile-list" class="profile-cards-list">
+            <!-- Render danh sách profile bằng JS -->
+          </div>
+
+          <!-- KHUNG CHỈNH SỬA HỒ SƠ & MỤC TIÊU LỘ TRÌNH (Ẩn mặc định) -->
+          <div id="edit-profile-section" class="edit-profile-card hidden">
+            <div class="edit-profile-header">
+              <div>
+                <span class="eyebrow">CHỈNH SỬA MỤC TIÊU &amp; LỘ TRÌNH</span>
+                <h4 id="edit-profile-title">Chỉnh sửa hồ sơ</h4>
+              </div>
+              <button id="close-edit-profile-btn" class="close-btn" type="button" title="Đóng chỉnh sửa">✕</button>
+            </div>
+            
+            <form id="edit-profile-form" class="modal-form">
+              <input type="hidden" id="edit-profile-id" />
+              
+              <div class="form-row">
+                <label class="field-label" for="edit-profile-name">Tên học viên</label>
+                <input id="edit-profile-name" class="text-field" required maxlength="50" />
+              </div>
+
+              <div class="form-grid-2">
+                <div>
+                  <label class="field-label" for="edit-target-band">Mục tiêu IELTS Band</label>
+                  <select id="edit-target-band" class="select-field">
+                    <option value="5.0">Band 5.0 (Modest)</option>
+                    <option value="5.5">Band 5.5 (Modest+)</option>
+                    <option value="6.0">Band 6.0 (Competent)</option>
+                    <option value="6.5">Band 6.5 (Upper B2)</option>
+                    <option value="7.0">Band 7.0 (Good User)</option>
+                    <option value="7.5">Band 7.5 (High B2/C1)</option>
+                    <option value="8.0">Band 8.0 (Very Good)</option>
+                    <option value="8.5">Band 8.5 (Expert)</option>
+                    <option value="9.0">Band 9.0 (Mastery)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label" for="edit-daily-minutes">Cam kết mỗi ngày (phút)</label>
+                  <input id="edit-daily-minutes" type="number" class="text-field" min="5" max="300" step="5" required />
+                  <div class="quick-chip-row">
+                    <button type="button" class="quick-chip" data-target="edit-daily-minutes" data-val="15">15p</button>
+                    <button type="button" class="quick-chip" data-target="edit-daily-minutes" data-val="20">20p</button>
+                    <button type="button" class="quick-chip" data-target="edit-daily-minutes" data-val="30">30p</button>
+                    <button type="button" class="quick-chip" data-target="edit-daily-minutes" data-val="45">45p</button>
+                    <button type="button" class="quick-chip" data-target="edit-daily-minutes" data-val="60">60p</button>
+                    <button type="button" class="quick-chip" data-target="edit-daily-minutes" data-val="90">90p</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label class="field-label" for="edit-duration-months">Thời hạn đạt mục tiêu (tháng)</label>
+                <input id="edit-duration-months" type="number" class="text-field" min="1" max="24" step="1" required />
+                <div class="quick-chip-row">
+                  <button type="button" class="quick-chip" data-target="edit-duration-months" data-val="1">1 thg</button>
+                  <button type="button" class="quick-chip" data-target="edit-duration-months" data-val="2">2 thg</button>
+                  <button type="button" class="quick-chip" data-target="edit-duration-months" data-val="3">3 thg</button>
+                  <button type="button" class="quick-chip" data-target="edit-duration-months" data-val="4">4 thg</button>
+                  <button type="button" class="quick-chip" data-target="edit-duration-months" data-val="5">5 thg</button>
+                  <button type="button" class="quick-chip" data-target="edit-duration-months" data-val="6">6 thg</button>
+                  <button type="button" class="quick-chip" data-target="edit-duration-months" data-val="9">9 thg</button>
+                  <button type="button" class="quick-chip" data-target="edit-duration-months" data-val="12">1 năm</button>
+                </div>
+              </div>
+
+              <div class="edit-action-group">
+                <button type="submit" class="primary-button flex-1">💾 Lưu mục tiêu mới</button>
+                <button id="recalc-roadmap-btn" type="button" class="secondary-button" title="Tính lại các mốc thời gian và 3 giai đoạn của lộ trình">🔄 AI Tính lại lộ trình</button>
+                <button id="retake-test-btn" type="button" class="danger-outline-btn" title="Làm lại 3 câu test để AI đo lại trình độ đầu vào">🎙️ Thi lại đầu vào</button>
+              </div>
+            </form>
+          </div>
+
+          <hr class="modal-divider" />
+
+          <h4>＋ Tạo hồ sơ người học mới</h4>
+          <form id="create-profile-form" class="modal-form">
+            <div class="form-row">
+              <label class="field-label" for="new-profile-name">Tên học viên</label>
+              <input id="new-profile-name" class="text-field" placeholder="Ví dụ: Nam, Lan, Tuấn..." required maxlength="50" />
+            </div>
+
+            <div class="form-grid-2">
+              <div>
+                <label class="field-label" for="new-target-band">Mục tiêu IELTS Band</label>
+                <select id="new-target-band" class="select-field">
+                  <option value="5.0">Band 5.0 (Modest)</option>
+                  <option value="5.5">Band 5.5 (Modest+)</option>
+                  <option value="6.0">Band 6.0 (Competent)</option>
+                  <option value="6.5">Band 6.5 (Upper B2)</option>
+                  <option value="7.0" selected>Band 7.0 (Good User)</option>
+                  <option value="7.5">Band 7.5 (High B2/C1)</option>
+                  <option value="8.0">Band 8.0 (Very Good)</option>
+                  <option value="8.5">Band 8.5 (Expert)</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label" for="new-daily-minutes">Cam kết mỗi ngày (phút)</label>
+                <input id="new-daily-minutes" type="number" class="text-field" min="5" max="300" step="5" value="20" placeholder="Nhập số phút (vd: 20, 60, 90...)" required />
+                <div class="quick-chip-row">
+                  <button type="button" class="quick-chip" data-target="new-daily-minutes" data-val="15">15p</button>
+                  <button type="button" class="quick-chip active" data-target="new-daily-minutes" data-val="20">20p</button>
+                  <button type="button" class="quick-chip" data-target="new-daily-minutes" data-val="30">30p</button>
+                  <button type="button" class="quick-chip" data-target="new-daily-minutes" data-val="45">45p</button>
+                  <button type="button" class="quick-chip" data-target="new-daily-minutes" data-val="60">60p</button>
+                  <button type="button" class="quick-chip" data-target="new-daily-minutes" data-val="90">90p</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <label class="field-label" for="new-duration-months">Thời hạn đạt mục tiêu (tháng)</label>
+              <input id="new-duration-months" type="number" class="text-field" min="1" max="24" step="1" value="3" placeholder="Nhập số tháng (vd: 1, 3, 4, 5, 6, 12...)" required />
+              <div class="quick-chip-row">
+                <button type="button" class="quick-chip" data-target="new-duration-months" data-val="1">1 thg</button>
+                <button type="button" class="quick-chip" data-target="new-duration-months" data-val="2">2 thg</button>
+                <button type="button" class="quick-chip active" data-target="new-duration-months" data-val="3">3 thg</button>
+                <button type="button" class="quick-chip" data-target="new-duration-months" data-val="4">4 thg</button>
+                <button type="button" class="quick-chip" data-target="new-duration-months" data-val="5">5 thg</button>
+                <button type="button" class="quick-chip" data-target="new-duration-months" data-val="6">6 thg</button>
+                <button type="button" class="quick-chip" data-target="new-duration-months" data-val="9">9 thg</button>
+                <button type="button" class="quick-chip" data-target="new-duration-months" data-val="12">1 năm</button>
+              </div>
+            </div>
+
+            <button type="submit" class="primary-button full-width">Tạo hồ sơ và thiết lập lộ trình ↗</button>
+          </form>
+
+          <hr class="modal-divider" />
+          <button id="reset-all-data-btn" class="danger-outline-btn full-width" type="button">🔄 Xóa sạch toàn bộ dữ liệu & Bắt đầu lại từ đầu</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL KIỂM TRA ĐẦU VÀO (PLACEMENT TEST MODAL) -->
+    <div id="placement-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+      <div class="modal-box placement-modal-box">
+        <div class="modal-header">
+          <div>
+            <span class="eyebrow">DIAGNOSTIC TEST</span>
+            <h3 id="placement-header-title">Kiểm tra trình độ đầu vào</h3>
+          </div>
+          <button id="close-placement-modal-btn" class="close-btn" type="button">✕</button>
+        </div>
+        
+        <div id="placement-test-body" class="modal-body">
+          <div class="placement-step-indicator">
+            <span id="step-pill-1" class="step-pill active">1. Đời sống (A2-B1)</span>
+            <span id="step-pill-2" class="step-pill">2. Kể chuyện (B1-B2)</span>
+            <span id="step-pill-3" class="step-pill">3. Luận đề (B2-C1)</span>
+          </div>
+
+          <div class="placement-question-card">
+            <span id="placement-q-level" class="phase-tag">Part 1</span>
+            <h4 id="placement-q-text">Đang tải câu hỏi...</h4>
+            <p id="placement-q-focus" class="placement-focus-hint">Gợi ý kiểm tra</p>
+          </div>
+
+          <div class="placement-composer">
+            <div class="placement-stt-header">
+              <label class="field-label" for="placement-answer">Câu trả lời của bạn (Nói bằng mic hoặc gõ vào):</label>
+              <span class="stt-badge">⚡ Nhận diện: <strong>Whisper AI (RTX 5060 Ti GPU)</strong></span>
+            </div>
+            <textarea id="placement-answer" rows="3" placeholder="Click 'Ghi âm' để nói hoặc gõ câu trả lời tiếng Anh ở đây..."></textarea>
+            <div class="placement-actions">
+              <span id="placement-recording-timer" class="recording-timer hidden">00:00</span>
+              <button id="placement-record-btn" class="record-button" type="button">
+                <span class="mic-icon">●</span><span id="placement-record-label">Ghi âm</span>
+              </button>
+              <button id="placement-next-btn" class="primary-button" type="button">Tiếp tục câu sau ↗</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Màn hình chờ AI chấm điểm -->
+        <div id="placement-loading-view" class="modal-body center-content hidden">
+          <div class="spinner-disc"></div>
+          <h4>AI Coach đang lắng nghe và đánh giá...</h4>
+          <p>Local AI (Ollama) đang phân tích độ mượt (Fluency), vốn từ vựng, ngữ pháp và tính toán lộ trình bám sát mục tiêu của bạn.</p>
+        </div>
+
+        <!-- Màn hình hiển thị kết quả chẩn đoán & lộ trình -->
+        <div id="placement-result-view" class="modal-body hidden">
+          <div class="result-banner">
+            <div class="band-circle">
+              <span class="band-num" id="result-estimated-band">5.0</span>
+              <span class="band-label">Current Band</span>
+            </div>
+            <div>
+              <h4 id="result-headline">Trình độ chẩn đoán: Band 5.0</h4>
+              <p id="result-verdict">Nhận xét của Examiner</p>
+            </div>
+          </div>
+
+          <div class="provisional-disclaimer-card">
+            <span class="disclaimer-icon" aria-hidden="true">ℹ️</span>
+            <span class="disclaimer-text"><strong>Provisional Practice Estimate:</strong> Kết quả chẩn đoán nhanh và lộ trình gợi ý phục vụ mục đích luyện tập cá nhân, không phải bảng điểm khảo thí IELTS chính thức của IDP hay British Council.</span>
+          </div>
+
+          <div class="result-criteria-grid">
+            <div class="criteria-badge-card">
+              <span class="criteria-badge-label">🎙️ Độ trôi chảy (FC)</span>
+              <span class="criteria-badge-score" id="result-fc-score">5.5</span>
+            </div>
+            <div class="criteria-badge-card">
+              <span class="criteria-badge-label">📚 Vốn từ vựng (LR)</span>
+              <span class="criteria-badge-score" id="result-lr-score">5.5</span>
+            </div>
+            <div class="criteria-badge-card">
+              <span class="criteria-badge-label">✍️ Ngữ pháp (GRA)</span>
+              <span class="criteria-badge-score" id="result-gra-score">5.5</span>
+            </div>
+            <div class="criteria-badge-card">
+              <span class="criteria-badge-label">🗣️ Phát âm (PR)</span>
+              <span class="criteria-badge-score" id="result-pr-score">Chuẩn GPU</span>
+            </div>
+          </div>
+
+          <div class="result-columns">
+            <div class="result-col">
+              <h5>⚠️ Điểm yếu then chốt cần khắc phục:</h5>
+              <ul id="result-weaknesses-list" class="styled-list"></ul>
+            </div>
+            <div class="result-col">
+              <h5>✅ Điểm mạnh ghi nhận:</h5>
+              <ul id="result-strengths-list" class="styled-list"></ul>
+            </div>
+          </div>
+
+          <div class="roadmap-preview-box">
+            <div class="roadmap-head">
+              <h5>🗺️ Lộ trình đề xuất: <span id="result-target-summary">Lên Band 7.0 trong 3 tháng</span></h5>
+              <span id="result-hours-badge" class="hours-badge">30 giờ luyện nói</span>
+            </div>
+            <div id="result-phases-container" class="phases-cards">
+              <!-- Render 3 phases by JS -->
+            </div>
+          </div>
+
+          <button id="accept-roadmap-btn" class="primary-button full-width" type="button">Bắt đầu học theo lộ trình này ngay ↗</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL XEM CHI TIẾT LỘ TRÌNH (ROADMAP DETAILS MODAL) -->
+    <div id="roadmap-details-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+      <div class="modal-box placement-modal-box">
+        <div class="modal-header">
+          <div>
+            <span class="eyebrow">PERSONALIZED ROADMAP</span>
+            <h3>Bản đồ lộ trình học tập của bạn</h3>
+          </div>
+          <button id="close-roadmap-modal-btn" class="close-btn" type="button">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="full-roadmap-content">
+            <!-- Render nội dung lộ trình bằng JS -->
+          </div>
+          <div class="roadmap-modal-actions">
+            <button id="modal-edit-goals-btn" class="secondary-button" type="button">✏️ Chỉnh sửa mục tiêu &amp; Thời gian</button>
+            <button id="modal-recalc-ai-btn" class="primary-button" type="button">🔄 AI Tính lại lộ trình</button>
+            <button id="modal-retake-test-btn" class="danger-outline-btn" type="button">🎙️ Thi thử lại đầu vào</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL LỊCH SỬ LUYỆN TẬP (SESSIONS HISTORY) -->
+    <div id="history-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+      <div class="modal-box history-modal-box">
+        <div class="modal-header">
+          <div>
+            <span class="eyebrow">SPEAKING SESSIONS HISTORY</span>
+            <h3>📚 Lịch sử các bài luyện nói</h3>
+            <p class="modal-subtitle">Tất cả bài nói được lưu trữ 100% trên máy. Bấm vào bài luyện để xem lại toàn bộ câu hỏi, câu trả lời, lỗi ngữ pháp và nghe lại bản ghi âm của bạn.</p>
+          </div>
+          <button id="close-history-modal-btn" class="close-btn" type="button">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="history-sessions-list" class="history-sessions-list">
+            <div class="history-loading">Đang tải danh sách bài luyện...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </body>
 </html>

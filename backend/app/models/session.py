@@ -9,14 +9,18 @@ class SessionModel(Base):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String, default="default")
+    owner_user_id = Column(String, nullable=False, default="default", index=True)
     mode = Column(String, nullable=False)
     started_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     ended_at = Column(DateTime, nullable=True)
     topic = Column(String, nullable=True)
     total_speaking_ms = Column(Integer, default=0)
+    actual_speaking_ms = Column(Integer, default=0)
+    audio_duration_ms = Column(Integer, default=0)
+    typing_practice_ms = Column(Integer, default=0)
+    session_duration_ms = Column(Integer, default=0)
     estimated_band = Column(Float, nullable=True)
     evaluation_json = Column(String, nullable=True)
     provider = Column(String, nullable=True)
 
     turns = relationship("TurnModel", back_populates="session")
-

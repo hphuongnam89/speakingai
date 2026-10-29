@@ -4,6 +4,25 @@ from app.models.mistake import MistakeModel
 from app.models.settings import UserSettingsModel
 from app.models.progress import DailyStatsModel
 from app.models.user import UserModel
+from app.models.profile import ProfileModel
+from app.models.audio import AudioRecordingModel
+from app.models.adaptive_plan import AdaptivePlanModel
+from app.models.scoring import EvaluationFeedbackModel, CalibrationSampleModel
+from app.models.pilot import PilotRunModel, PilotEventModel, PilotFeedbackModel
 
-__all__ = ["SessionModel", "TurnModel", "MistakeModel", "UserSettingsModel", "DailyStatsModel", "UserModel"]
-
+__all__ = [
+    "SessionModel",
+    "TurnModel",
+    "MistakeModel",
+    "UserSettingsModel",
+    "DailyStatsModel",
+    "UserModel",
+    "ProfileModel",
+    "AudioRecordingModel",
+    "AdaptivePlanModel",
+    "EvaluationFeedbackModel",
+    "CalibrationSampleModel",
+    "PilotRunModel",
+    "PilotEventModel",
+    "PilotFeedbackModel",
+]

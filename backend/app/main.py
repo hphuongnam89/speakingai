@@ -1,4 +1,6 @@
 import os
+import asyncio
+import logging
 from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
@@ -33,16 +35,41 @@ from app.api import (
     settings as api_settings,
     ielts,
     progress,
-    pronunciation
+    pronunciation,
+    profiles,
+    placement,
+    pilot
 )
+
+logger = logging.getLogger(__name__)
+
+async def periodic_audio_cleanup():
+    from app.services.audio_retention import cleanup_expired_audio
+    while True:
+        try:
+            await asyncio.sleep(3600)  # Chạy dọn dẹp mỗi 1 giờ
+            removed = cleanup_expired_audio()
+            if removed > 0:
+                logger.info(f"Periodic audio cleanup removed {removed} expired recordings")
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logger.error(f"Error during periodic audio cleanup: {e}")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Database migration & directory creation
     init_db()
     os.makedirs(settings.AUDIO_DIR, exist_ok=True)
+    from app.services.audio_retention import cleanup_expired_audio
+    cleanup_expired_audio()
+    cleanup_task = asyncio.create_task(periodic_audio_cleanup())
     yield
-    # Shutdown logic (if any)
+    cleanup_task.cancel()
+    try:
+        await cleanup_task
+    except asyncio.CancelledError:
+        pass
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -64,7 +91,7 @@ else:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,
+    allow_credentials=settings.CORS_ORIGINS.strip() != "*",
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -87,6 +114,9 @@ app.include_router(api_settings.router, prefix="/api/v1", dependencies=protected
 app.include_router(ielts.router, prefix="/api/v1", dependencies=protected_deps)
 app.include_router(progress.router, prefix="/api/v1", dependencies=protected_deps)
 app.include_router(pronunciation.router, prefix="/api/v1", dependencies=protected_deps)
+app.include_router(profiles.router, prefix="/api/v1", dependencies=protected_deps)
+app.include_router(placement.router, prefix="/api/v1", dependencies=protected_deps)
+app.include_router(pilot.router, prefix="/api/v1", dependencies=protected_deps)
 
 WEB_DIR = Path(__file__).resolve().parents[1] / "web"
 app.mount("/static", StaticFiles(directory=WEB_DIR), name="web-static")

@@ -39,6 +39,12 @@ interface ApiService {
     @POST("api/v1/sessions/{id}/finish")
     suspend fun finishSession(@Path("id") id: String): SessionResponse
 
+    @GET("api/v1/profiles")
+    suspend fun getProfiles(): List<ProfileDto>
+
+    @POST("api/v1/profiles/{id}/select")
+    suspend fun selectProfile(@Path("id") id: String): ProfileDto
+
     @POST("api/v1/conversation/respond")
     suspend fun respond(@Body request: ConversationRequest): ConversationResponse
 
@@ -64,6 +70,12 @@ interface ApiService {
     @POST("api/v1/mistakes/{id}/resolve")
     suspend fun resolveMistake(@Path("id") id: String): MistakeResolveResponse
 
+    @POST("api/v1/mistakes/{id}/review")
+    suspend fun reviewMistake(@Path("id") id: String, @Body request: MistakeReviewRequest): MistakeDto
+
+    @POST("api/v1/conversation/repeat-check")
+    suspend fun repeatCheck(@Body request: RepeatCheckRequest): RepeatCheckResponse
+
     // Phase 3: IELTS Speaking
     @POST("api/v1/ielts/start")
     suspend fun startIeltsTest(@Body request: IeltsStartRequest): IeltsStartResponse
@@ -73,6 +85,9 @@ interface ApiService {
 
     @POST("api/v1/ielts/evaluate/{session_id}")
     suspend fun evaluateIelts(@Path("session_id") sessionId: String): IeltsEvaluationResponse
+
+    @POST("api/v1/ielts/evaluate/{session_id}/feedback")
+    suspend fun submitEvaluationFeedback(@Path("session_id") sessionId: String, @Body request: EvaluationFeedbackRequest): Map<String, String>
 
     // Phase 4: Progress & Adaptive Learning
     @GET("api/v1/progress/summary")
@@ -94,6 +109,5 @@ interface ApiService {
     @POST("api/v1/pronunciation/drill")
     suspend fun evaluatePronunciationDrill(@Body request: PronunciationDrillRequest): PronunciationDrillResponseDto
 }
-
 
 

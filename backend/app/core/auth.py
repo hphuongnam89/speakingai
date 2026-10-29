@@ -51,11 +51,31 @@ def verify_api_key(
     request.state.user_id = "default"
     return True
 
+def get_current_principal_id(request: Request) -> str:
+    """Return the JWT/API-key principal, never a client-selected profile."""
+    return getattr(request.state, "user_id", None) or "default"
+
+
 def get_current_user_id(request: Request) -> str:
     """
-    Returns the identity authenticated by the router-level API-key/JWT dependency.
+    Returns the selected profile resource owned by the authenticated principal.
+    X-Profile-Id and query profile_id are selectors only, never identities.
     """
-    return getattr(request.state, "user_id", "default")
+    principal = get_current_principal_id(request)
+    try:
+        from app.core.database import SessionLocal
+        from app.models.profile import ProfileModel
+        with SessionLocal() as db:
+            selected = request.headers.get("X-Profile-Id") or request.query_params.get("profile_id")
+            query = db.query(ProfileModel).filter(ProfileModel.owner_user_id == principal)
+            if selected and selected.strip():
+                profile = query.filter(ProfileModel.id == selected.strip()).first()
+                return profile.id if profile else principal
+            active = query.filter(ProfileModel.is_active == True).order_by(ProfileModel.last_active_at.desc()).first()
+            return active.id if active else principal
+    except Exception:
+        pass
+    return principal
 
 
 def _b64encode(value: bytes) -> str:

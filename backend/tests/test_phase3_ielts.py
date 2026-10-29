@@ -86,6 +86,27 @@ def test_ielts_part2_cue_card():
     assert "Estimated score" in eval_data["disclaimer"]
     print("\n>>> ALL IELTS PHASE 3 BACKEND TESTS PASSED! <<<")
 
+def test_ielts_topics_catalog():
+    res = client.get("/api/v1/ielts/topics")
+    assert res.status_code == 200
+    data = res.json()
+    assert "part1" in data and len(data["part1"]) >= 5
+    assert "part2" in data and len(data["part2"]) >= 4
+    assert "daily" in data and len(data["daily"]) >= 3
+
+def test_ielts_specific_topic_selection():
+    # Test starting Part 1 with a specific topic
+    res_p1 = client.post("/api/v1/ielts/start", json={"part": "part1", "topic": "Food & Cooking"})
+    assert res_p1.status_code == 200
+    d1 = res_p1.json()
+    assert "food" in d1["question"].lower() or "cooking" in d1["question"].lower()
+
+    # Test starting Part 2 with a specific cue card topic
+    res_p2 = client.post("/api/v1/ielts/start", json={"part": "part2", "topic": "An Inspiring Person"})
+    assert res_p2.status_code == 200
+    d2 = res_p2.json()
+    assert d2["cue_card"]["topic"] == "An Inspiring Person"
+
 if __name__ == "__main__":
     test_ielts_part1_flow()
     test_ielts_part2_cue_card()

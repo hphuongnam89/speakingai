@@ -16,15 +16,29 @@ object ApiClient {
 
     @Volatile
     private var accessToken: String = ""
+    @Volatile
+    private var selectedProfileId: String = ""
 
     private var currentService: ApiService? = null
 
     fun initialize(context: Context) {
         accessToken = ApiCredentialStore.readAccessToken(context.applicationContext).orEmpty()
+        selectedProfileId = ProfileSelectorStore.read(context.applicationContext).orEmpty()
     }
 
     fun updateAccessToken(value: String) {
         accessToken = value.trim()
+    }
+
+    fun updateProfileSelector(value: String?) {
+        selectedProfileId = value?.trim().orEmpty()
+    }
+
+    fun clearSession(context: Context) {
+        accessToken = ""
+        selectedProfileId = ""
+        ApiCredentialStore.writeAccessToken(context.applicationContext, "")
+        ProfileSelectorStore.write(context.applicationContext, null)
     }
 
     fun getService(): ApiService {
@@ -46,8 +60,11 @@ object ApiClient {
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder().apply {
                     accessToken.takeIf { it.isNotBlank() }?.let { header("Authorization", "Bearer $it") }
+                    selectedProfileId.takeIf { it.isNotBlank() }?.let { header("X-Profile-Id", it) }
                 }.build()
-                chain.proceed(request)
+                val response = chain.proceed(request)
+                if (response.code == 401) accessToken = ""
+                response
             }
             .addInterceptor(loggingInterceptor)
             .connectTimeout(15, TimeUnit.SECONDS)

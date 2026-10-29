@@ -21,3 +21,6 @@ class AdaptivePlanResponse(BaseModel):
     top_weaknesses: List[str]
     recommended_topic: str
     challenge_phrases: List[str]
+    plan_date: Optional[str] = None
+    evidence_count: int = 0
+    next_best_action: str = "Complete one focused speaking practice."

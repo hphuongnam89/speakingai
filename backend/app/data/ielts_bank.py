@@ -45,6 +45,51 @@ PART_1_TOPICS = [
             "Do you think technology makes life simpler or more complicated?",
             "Can you imagine spending a full week without your mobile phone?"
         ]
+    },
+    {
+        "topic": "Food & Cooking",
+        "questions": [
+            "What kinds of food do you most enjoy eating?",
+            "Do you prefer cooking at home or eating out at restaurants?",
+            "What is a traditional dish from your country that you recommend to foreigners?",
+            "Has your diet changed in any way over the past few years?"
+        ]
+    },
+    {
+        "topic": "Travel & Holidays",
+        "questions": [
+            "What was the most memorable holiday trip you have ever taken?",
+            "Do you prefer traveling alone or with a group of friends or family?",
+            "Which foreign country or city would you most like to visit in the future?",
+            "What do you think is the best way to travel long distances?"
+        ]
+    },
+    {
+        "topic": "Weather & Climate",
+        "questions": [
+            "What kind of weather do you like best?",
+            "Does the weather affect your mood or daily productivity?",
+            "What is the weather usually like in your country during the winter?",
+            "Do you think climate change is affecting the seasons in your hometown?"
+        ]
+    },
+    {
+        "topic": "Music & Entertainment",
+        "questions": [
+            "What genre of music do you listen to when you want to relax?",
+            "Have you ever attended a live concert or music performance?",
+            "Do you play any musical instruments or wish you could play one?",
+            "How has the way people listen to music changed compared to the past?"
+        ]
+    },
+    {
+        "topic": "Sports & Physical Exercise",
+        "questions": [
+            "What kinds of sports or physical activities do you enjoy?",
+            "Did you play any sports when you were in primary or secondary school?",
+            "Do you prefer watching sports live in a stadium or on television?",
+            "Why is regular physical exercise so important for people nowadays?"
+        ]
     }
 ]
 
@@ -120,8 +165,102 @@ PART_2_CUE_CARDS = [
             "How can people stay disciplined when they face unexpected obstacles?",
             "Is ambition always a positive quality in modern society?"
         ]
+    },
+    {
+        "id": "cue_card_5",
+        "topic": "A Useful Device or Technology",
+        "title": "Describe a piece of electronic equipment or technology that you find useful.",
+        "bullets": [
+            "What the device is and how often you use it",
+            "When and why you got it",
+            "What features you find most helpful",
+            "And explain how your daily life would be affected if you didn't have it."
+        ],
+        "follow_up": "Do you consider yourself an early adopter of new technology?",
+        "part_3_questions": [
+            "How has reliance on smartphones altered interpersonal communication?",
+            "Will artificial intelligence replace intellectual professions in the near future?",
+            "What challenges do senior citizens encounter when adapting to new tech devices?",
+            "Should children have restricted screen time during their formative years?"
+        ]
+    },
+    {
+        "id": "cue_card_6",
+        "topic": "An Environmental Concern",
+        "title": "Describe an environmental problem in your local city or country.",
+        "bullets": [
+            "What the problem is and where it occurs",
+            "What causes this issue",
+            "How it affects local residents and wildlife",
+            "And explain what measures can be taken to solve or mitigate it."
+        ],
+        "follow_up": "Are people in your community actively participating in environmental cleanup?",
+        "part_3_questions": [
+            "Who bears greater responsibility for combating pollution: governments or individuals?",
+            "Can economic development and environmental protection realistically coexist?",
+            "Why do many people still hesitate to adopt zero-waste and recycling lifestyles?",
+            "What role should schools play in educating younger generations about ecology?"
+        ]
     }
 ]
+
+DAILY_TOPICS = [
+    {
+        "id": "daily_1",
+        "topic": "Daily Routine & Productivity",
+        "titleVi": "Nhịp sinh hoạt & Năng suất làm việc",
+        "opening": "How do you usually start your morning, and what is your favorite part of the day?"
+    },
+    {
+        "id": "daily_2",
+        "topic": "Coffee, Tea & Cafe Culture",
+        "titleVi": "Văn hóa cà phê & Không gian thư giãn",
+        "opening": "Do you prefer drinking coffee or tea, and what kind of atmosphere do you look for in a cafe?"
+    },
+    {
+        "id": "daily_3",
+        "topic": "Weekend Plans & Unwinding",
+        "titleVi": "Kế hoạch cuối tuần & Xả stress",
+        "opening": "What is your ideal way to recharge your energy after a demanding week?"
+    },
+    {
+        "id": "daily_4",
+        "topic": "Films, Series & Books",
+        "titleVi": "Phim ảnh, Sách truyện & Giải trí",
+        "opening": "What was the most engaging movie or book you enjoyed recently, and why did it stand out?"
+    },
+    {
+        "id": "daily_5",
+        "topic": "Future Ambitions & Bucket List",
+        "titleVi": "Mục tiêu tương lai & Trải nghiệm mơ ước",
+        "opening": "If you could master any new skill or visit any destination in the next year, what would you choose?"
+    }
+]
+
+def get_topics_catalog():
+    return {
+        "part1": PART_1_TOPICS,
+        "part2": PART_2_CUE_CARDS,
+        "daily": DAILY_TOPICS
+    }
+
+def find_part_1_by_topic(name: str):
+    if not name:
+        return None
+    name_clean = name.strip().lower()
+    for t in PART_1_TOPICS:
+        if name_clean in t["topic"].lower() or t["topic"].lower() in name_clean:
+            return t
+    return None
+
+def find_cue_card_by_topic(name_or_id: str):
+    if not name_or_id:
+        return None
+    q = name_or_id.strip().lower()
+    for c in PART_2_CUE_CARDS:
+        if c["id"].lower() == q or q in c["topic"].lower() or c["topic"].lower() in q or q in c["title"].lower():
+            return c
+    return None
 
 def get_random_part_1():
     return random.choice(PART_1_TOPICS)

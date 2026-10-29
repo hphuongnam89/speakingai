@@ -3,6 +3,17 @@
 Base:
 `/api/v1`
 
+## Contract rules v1
+
+- `Authorization: Bearer <access_token>` identifies the principal. `X-Profile-Id` and `profile_id` are resource selectors only and are accepted only when the selected profile belongs to that principal.
+- Profile/session/mistake/progress/audio routes return `404` for resources outside the principal rather than leaking existence.
+- Band values are provisional practice estimates, not official IELTS results. `pronunciation_score` is `null` unless an acoustic assessor produced it; STT confidence is a separate field.
+- Audio uploads are bounded by `MAX_AUDIO_BYTES` and `MAX_AUDIO_DURATION_MS`, receive a retention deadline, and are removed by reset/delete/retention cleanup.
+- Conversation corrections include `error_type`, `subtype`, `severity` and `practice_prompt`; `/conversation/repeat-check` verifies say-it-again reuse.
+- Mistake review uses `/mistakes/{id}/review` and requires repeated successful reuse before `mastery_state=mastered`. `/progress/adaptive-plan` is evidence-based and cached per principal/day.
+- IELTS evaluation is always provisional until calibration is accepted; it returns `confidence`, `confidence_range`, `limitation`, `scoring_version`, `model_id` and `prompt_version`. Evaluation feedback accepts `useful`, `incorrect`, `too_harsh` or `too_vague`.
+- Controlled pilot endpoints are `/pilot/runs`, `/pilot/runs/{id}/events`, `/pilot/runs/{id}/feedback`, `/pilot/runs/{id}/summary` and `DELETE /pilot/runs/{id}`; pilot metadata excludes audio and full transcripts and is ownership-scoped.
+
 ## Health
 GET `/health`
 

@@ -10,14 +10,20 @@ class Settings(BaseSettings):
     DEEPSEEK_BASE_URL: str = "https://api.deepseek.com/v1"
     DEEPSEEK_MODEL: str = "deepseek-chat"
     DATABASE_URL: str = "sqlite:///./data/app.db"
-    WHISPER_MODEL: str = "base.en"
+    WHISPER_MODEL: str = "medium.en"
+    WHISPER_DEVICE: str = "auto"  # auto, cuda, cpu
+    WHISPER_COMPUTE_TYPE: str = "auto"  # auto, float16, int8
     AUDIO_DIR: str = "./data/audio"
+    MAX_AUDIO_BYTES: int = 15 * 1024 * 1024
+    MAX_AUDIO_DURATION_MS: int = 180000
+    AUDIO_RETENTION_HOURS: int = 24
+    DELETE_AUDIO_AFTER_TRANSCRIPTION: bool = False
     PRONUNCIATION_ASSESSOR_URL: str = ""
     PRONUNCIATION_ASSESSOR_TIMEOUT: float = 300.0
-    LLM_TIMEOUT: int = 120
-    OLLAMA_TIMEOUT: float = 120.0
+    LLM_TIMEOUT: int = 300
+    OLLAMA_TIMEOUT: float = 300.0
     OLLAMA_CONTEXT_LENGTH: int = 4096
-    OLLAMA_MAX_OUTPUT_TOKENS: int = 1024
+    OLLAMA_MAX_OUTPUT_TOKENS: int = 1536
     OLLAMA_THINK: bool = False
     DEEPSEEK_TIMEOUT: float = 30.0
     MODEL_ROUTING_PREFERENCE: str = "auto"  # auto, local_only, cloud_only
@@ -30,7 +36,7 @@ class Settings(BaseSettings):
     SENTRY_DSN: str = ""
     RATE_LIMIT_ENABLED: bool = True
     RATE_LIMIT_PER_MINUTE: int = 120
-    CORS_ORIGINS: str = "*"
+    CORS_ORIGINS: str = "http://localhost,http://127.0.0.1"
     ENVIRONMENT: str = "development"
     ENABLE_SECURITY_HEADERS: bool = True
 
@@ -38,6 +44,16 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_production_security(self):
+        # Cap local context length to 4096 if set to excessive values (e.g. 32768) in OS environment
+        if self.OLLAMA_CONTEXT_LENGTH > 4096:
+            self.OLLAMA_CONTEXT_LENGTH = 4096
+
+        if self.MAX_AUDIO_BYTES < 1024 or self.MAX_AUDIO_BYTES > 100 * 1024 * 1024:
+            raise ValueError("MAX_AUDIO_BYTES must be between 1KB and 100MB")
+        if self.MAX_AUDIO_DURATION_MS < 1000 or self.MAX_AUDIO_DURATION_MS > 900000:
+            raise ValueError("MAX_AUDIO_DURATION_MS must be between 1s and 15m")
+        if self.AUDIO_RETENTION_HOURS < 1:
+            raise ValueError("AUDIO_RETENTION_HOURS must be at least 1")
         if self.RATE_LIMIT_PER_MINUTE < 1:
             raise ValueError("RATE_LIMIT_PER_MINUTE must be at least 1")
         if not 1 <= self.ACCESS_TOKEN_TTL_MINUTES <= 10080:

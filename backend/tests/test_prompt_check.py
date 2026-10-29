@@ -8,10 +8,11 @@ def test_parse_corrections_and_say_it_again_prompt():
         "Nice answer. What happened next?\n"
         '[CORRECTIONS]{"corrections":[{"original":"She don\'t",'
         '"corrected":"She doesn\'t","explanation":"Use does with she.",'
-        '"category":"grammar","should_repeat":true}]}[/CORRECTIONS]'
+        '"category":"grammar","should_repeat":true}],'
+        '"upgraded_sentence":"She doesn\'t drink coffee at all."}[/CORRECTIONS]'
     )
 
-    clean_reply, corrections, repeat_prompt = parse_corrections(response)
+    clean_reply, corrections, repeat_prompt, upgraded_sentence = parse_corrections(response)
 
     assert clean_reply == "Nice answer. What happened next?"
     assert corrections == [{
@@ -19,9 +20,14 @@ def test_parse_corrections_and_say_it_again_prompt():
         "corrected": "She doesn't",
         "explanation": "Use does with she.",
         "category": "grammar",
+        "error_type": "grammar",
+        "subtype": "general",
+        "severity": "important",
+        "practice_prompt": "Say a new sentence using: She doesn't",
         "should_repeat": True,
     }]
     assert repeat_prompt == 'Try saying: "She doesn\'t"'
+    assert upgraded_sentence == "She doesn't drink coffee at all."
 
 
 def test_conversation_prompt_contains_selected_correction_level():

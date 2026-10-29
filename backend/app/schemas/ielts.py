@@ -30,6 +30,8 @@ class IeltsRespondResponse(BaseModel):
     tts_text: str
     is_completed: bool = False
     next_part: Optional[str] = None
+    cue_card: Optional[CueCard] = None
+    timing_warning: Optional[str] = None
 
 class SuggestedExpression(BaseModel):
     original: str
@@ -51,3 +53,14 @@ class IeltsEvaluationResponse(BaseModel):
     suggested_expressions: List[SuggestedExpression] = []
     examiner_summary: str
     disclaimer: str = "Estimated score — not an official IELTS result."
+    score_status: str = "provisional"
+    confidence: float = 0.0
+    confidence_range: str = "insufficient calibration data"
+    limitation: str = "Pronunciation is not scored from transcript alone."
+    scoring_version: str = "phase8-v1"
+    model_id: Optional[str] = None
+    prompt_version: str = "ielts-evaluation-v1"
+
+class EvaluationFeedbackRequest(BaseModel):
+    flag: str
+    comment: Optional[str] = None

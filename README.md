@@ -6,6 +6,8 @@
 
 ## 🛠️ 1. Khởi động Backend (FastAPI + Ollama)
 
+Product contract và privacy boundary v1 nằm tại [docs/15_PRODUCT_CONTRACT_V1.md](docs/15_PRODUCT_CONTRACT_V1.md) và [docs/16_PRIVACY_NOTICE_V1.md](docs/16_PRIVACY_NOTICE_V1.md). Audio bị giới hạn kích thước/thời lượng, có retention deadline và được xóa khi reset dữ liệu.
+
 ### Yêu cầu
 - Python 3.12+ (hoặc Python 3.13)
 - Ollama với model `ornith-1.5:9b` (hoặc `gpt-oss:20b`)
@@ -26,8 +28,10 @@
 
 3. **Chạy máy chủ Backend**:
    ```bash
-   .\venv\Scripts\python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-   ```
+       .\venv\Scripts\python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+       ```
+
+   Từ thư mục repository, có thể dùng `powershell -ExecutionPolicy Bypass -File scripts/bootstrap.ps1` để tạo lại virtualenv và `scripts/check.ps1` để chạy compile/test giống CI.
 
    Backend gửi `num_ctx=4096` và `think=false` cho coach Ornith để tránh dùng
    context mặc định quá lớn hoặc chờ model suy luận dài. Timeout là 120 giây;

@@ -14,4 +14,5 @@ class TranscribeResponse(BaseModel):
     language: str = "en"
     metrics: AudioMetrics
     turn_id: str | None = None
+    audio_url: str | None = None
     pronunciation: PronunciationReportResponse | None = None

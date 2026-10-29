@@ -8,6 +8,8 @@ class MistakeResponse(BaseModel):
     session_id: Optional[str] = None
     turn_id: Optional[str] = None
     category: str
+    error_type: str = "grammar"
+    subtype: str = "general"
     original_text: str
     corrected_text: str
     explanation: Optional[str] = None
@@ -16,6 +18,11 @@ class MistakeResponse(BaseModel):
     last_seen_at: datetime
     occurrence_count: int
     resolved: bool
+    successful_reuse_count: int = 0
+    next_review_at: Optional[datetime] = None
+    last_reviewed_at: Optional[datetime] = None
+    mastery_state: str = "learning"
+    example_sentence: Optional[str] = None
 
     model_config = {"from_attributes": True}
 

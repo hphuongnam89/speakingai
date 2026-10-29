@@ -57,7 +57,9 @@ Format:
       "context": "Used when describing favorite hobbies"
     }
   ],
-  "examiner_summary": "Solid communicative competence capable of handling both concrete and abstract topics with minor slips."
+  "examiner_summary": "Solid communicative competence capable of handling both concrete and abstract topics with minor slips.",
+  "confidence": 0.45,
+  "confidence_range": "±0.5 band; calibration pending"
 }
 [/EVALUATION]
 """
@@ -116,7 +118,14 @@ def parse_evaluation(response_text: str) -> dict:
             "strengths": list(data.get("strengths", [])),
             "areas_for_improvement": list(data.get("areas_for_improvement", [])),
             "suggested_expressions": list(data.get("suggested_expressions", [])),
-            "examiner_summary": str(data.get("examiner_summary", "Evaluation complete."))
+            "examiner_summary": str(data.get("examiner_summary", "Evaluation complete.")),
+            "score_status": "provisional",
+            "confidence": float(data.get("confidence", 0.45)),
+            "confidence_range": str(data.get("confidence_range", "±0.5 band; calibration pending")),
+            "limitation": "Pronunciation is not scored from transcript alone.",
+            "scoring_version": "phase8-v1",
+            "model_id": str(data.get("model_id")) if data.get("model_id") else None,
+            "prompt_version": "ielts-evaluation-v1"
         }
     except Exception as e:
         # Fallback evaluation if JSON parse fails
@@ -132,5 +141,12 @@ def parse_evaluation(response_text: str) -> dict:
             "strengths": ["Clear communication", "Willingness to answer at length"],
             "areas_for_improvement": ["Incorporate more academic collocations", "Practice complex conditional structures"],
             "suggested_expressions": [],
-            "examiner_summary": "Candidate demonstrated ability to communicate effectively across questions."
+            "examiner_summary": "Candidate demonstrated ability to communicate effectively across questions.",
+            "score_status": "provisional",
+            "confidence": 0.25,
+            "confidence_range": "±1.0 band; model output format fallback",
+            "limitation": "Pronunciation is not scored from transcript alone.",
+            "scoring_version": "phase8-v1",
+            "model_id": None,
+            "prompt_version": "ielts-evaluation-v1"
         }

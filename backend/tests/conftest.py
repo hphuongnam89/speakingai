@@ -19,6 +19,7 @@ os.environ.update({
     "API_KEY_ENABLED": "false",
     "RATE_LIMIT_ENABLED": "false",
     "SENTRY_DSN": "",
+    "OLLAMA_CONTEXT_LENGTH": "4096",
 })
 
 

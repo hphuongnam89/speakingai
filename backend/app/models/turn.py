@@ -9,6 +9,8 @@ class TurnModel(Base):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     session_id = Column(String, ForeignKey("sessions.id"))
+    owner_user_id = Column(String, nullable=False, default="default", index=True)
+    client_turn_id = Column(String, nullable=True, index=True)
     role = Column(String, nullable=False)
     transcript = Column(Text, nullable=False)
     audio_path = Column(String, nullable=True)

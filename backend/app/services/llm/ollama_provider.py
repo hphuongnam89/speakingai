@@ -10,14 +10,19 @@ class OllamaProvider(LLMProvider):
         timeout = (options or {}).get("timeout", settings.OLLAMA_TIMEOUT)
         model = (options or {}).get("model", settings.OLLAMA_MODEL)
         url = f"{settings.OLLAMA_BASE_URL}/api/chat"
+
+        req_ctx = (options or {}).get("num_ctx") or settings.OLLAMA_CONTEXT_LENGTH
+        safe_ctx = min(int(req_ctx), 4096) if req_ctx else 4096
+        max_tokens = (options or {}).get("max_tokens", settings.OLLAMA_MAX_OUTPUT_TOKENS)
+
         payload = {
             "model": model,
             "messages": messages,
             "stream": False,
             "think": (options or {}).get("think", settings.OLLAMA_THINK),
             "options": {
-                "num_ctx": settings.OLLAMA_CONTEXT_LENGTH,
-                "num_predict": (options or {}).get("max_tokens", settings.OLLAMA_MAX_OUTPUT_TOKENS),
+                "num_ctx": safe_ctx,
+                "num_predict": max_tokens,
                 "temperature": 0.4,
             },
         }

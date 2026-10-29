@@ -8,6 +8,7 @@ class DailyStatsModel(Base):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String, default="default", index=True)
+    owner_user_id = Column(String, nullable=False, default="default", index=True)
     date = Column(String, nullable=False, index=True)  # YYYY-MM-DD
     speaking_minutes = Column(Float, default=0.0)
     session_count = Column(Integer, default=0)

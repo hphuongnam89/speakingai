@@ -2,6 +2,8 @@
 
 Learning Edition tại `/learn` có bốn lesson draft: Reading với evidence, Listening với audio tổng hợp, Writing với góp ý và bản tự sửa, Speaking ghi âm/sửa transcript; Today, review 2/7 ngày và dashboard dùng cùng hồ sơ. Speaking cũ ở `/speaking`. Hướng dẫn: [Learning run/review](docs/learning-audit/RUN_AND_REVIEW.md); [bàn giao Phase 2–3](docs/learning-handoffs/2026-11-07-phase-2-3.md). Nội dung/audio vẫn chờ human review.
 
+[Phase 4 technical release candidate](docs/learning-handoffs/2026-11-07-phase-4.md): assessment và placement chỉ đưa ước lượng từ vựng/ngữ pháp từ transcript khi đủ dữ kiện; không tự sinh overall, phát âm, confidence hoặc nhãn calibrated. Nội dung/pilot vẫn chờ duyệt.
+
 Docker build hiện dùng repository root: `docker build -f backend/Dockerfile .` để đóng gói React web cùng backend. Nếu đã có Ollama native, dùng `docker compose -f docker-compose.yml -f compose.host-ollama.yml up -d --build backend` để tránh tải model vào container riêng.
 
 Ứng dụng luyện nói tiếng Anh và luyện thi IELTS Speaking với AI Coach chạy Local (Ollama) và Cloud fallback.
@@ -129,11 +131,9 @@ Sau khi cài Android debug app và kết nối backend, dùng [pilot checklist](
   - **Part 2 (Long Turn / Cue Card)**: Thẻ chủ đề với 4 gợi ý, đếm ngược **60 giây chuẩn bị** và **120 giây nói liên tục** (không ngắt lời/không sửa lỗi trong lúc nói).
   - **Part 3 (Two-way Discussion)**: Giám khảo AI hỏi thảo luận chuyên sâu, phản biện học thuật từ chủ đề Part 2.
   - **Full Mock Test**: Mô phỏng toàn diện buổi thi thật 11–14 phút qua cả 3 phần.
-- **Hệ thống chấm điểm Band Score AI (Ollama Evaluator)**:
-  - Ước lượng Band điểm theo 3 tiêu chí chính thức: **Fluency & Coherence**, **Lexical Resource**, **Grammatical Range & Accuracy**.
-  - Bảng điểm chi tiết: Điểm tổng (Overall Band Score từ 1.0 đến 9.0), nhận xét từng tiêu chí, danh sách điểm mạnh (Strengths) và điểm cần cải thiện (Areas for Improvement).
-    - **Gợi ý nâng Band từ vựng (Vocabulary Upgrades)**: Bảng đối chiếu từ câu nói của thí sinh sang cách diễn đạt Band 7.5+ học thuật.
-  - Lưu ý bảo chứng chuẩn: *"Estimated score — not an official IELTS result."*
+- **Góp ý luyện tập từ transcript (Ollama)**:
+  - Ước lượng tạm thời về từ vựng và ngữ pháp; thiếu dữ kiện hoặc output không hợp lệ thì không đưa điểm.
+  - Không kết luận overall, phát âm hay độ lưu loát theo thời gian từ transcript. Cách diễn đạt thay thế chỉ là gợi ý; không gắn band cho từng cụm từ.
 
 ---
 

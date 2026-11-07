@@ -38,3 +38,5 @@ Có graph MCP: ưu tiên graph để tìm symbol rồi đọc snippet. Không c�
 Phase 0 = T00–T02; phase 1 = T03–T07. Đã hoàn thành nền tảng kỹ thuật/draft preview ngày 06/11/2026; xem `../learning-handoffs/2026-11-06-phase-0-1.md`. Content chưa human-approved, audio lesson và động cơ kỹ năng chuyên biệt thuộc phase 2. Trạng thái task hiện tại trong tasks.json thay thế trạng thái ban đầu ở trên.
 
 Phase 2 = T08–T11; phase 3 = T12–T15: triển khai kỹ thuật preview ngày 07/11/2026, xem `../learning-handoffs/2026-11-07-phase-2-3.md`. Không thay thế human review, microphone hardware checks, scorer validation hoặc pilot của T16–T19. `done` ở milestone này mô tả code/tests/preview, không khẳng định đã hoàn thành mọi kiểm định phát hành.
+
+Phase 4 = T16–T17: [assessment integrity và technical RC](../learning-handoffs/2026-11-07-phase-4.md). Điểm chưa hiệu chuẩn; dữ liệu human-rated, duyệt nội dung và pilot T18–T19 chưa có.

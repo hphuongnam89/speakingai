@@ -40,8 +40,9 @@ def test_app_js_uses_escape_html_for_dynamic_insertions():
     assert "escapeHtml(c.original)" in content
     assert "escapeHtml(c.corrected)" in content
     assert "escapeHtml(profile.name)" in content
-    assert "escapeHtml(examinerVerdict)" in content
-    assert "escapeHtml(pronFeedback)" in content
+    assert "escapeHtml(current.examiner_verdict" in content
+    assert "escapeHtml(v)" in content
+    assert "Độ rõ âm học Whisper: 92%" not in content
 
     # Verify focus trap & modal accessibility handlers exist
     assert "trapModalFocus" in content

@@ -1,12 +1,13 @@
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.config import settings
 from app.core.auth import get_current_principal_id
 from app.repositories.profile_repo import ProfileRepository
 from app.services.llm.router import get_model_router
+from app.services.assessment import VERSION, MIN_WORDS, parse_payload
 from app.prompts.placement import (
     PLACEMENT_QUESTIONS,
     build_placement_eval_messages,
@@ -18,27 +19,42 @@ router = APIRouter(prefix="/placement", tags=["placement"])
 
 class AnswerItem(BaseModel):
     question_id: int
-    question: str
-    answer: str = Field(..., min_length=2)
+    question: str = Field(max_length=2000)
+    answer: str = Field(min_length=2, max_length=4000)
 
 
 class PlacementEvaluateRequest(BaseModel):
-    profile_id: str
-    answers: List[AnswerItem]
+    profile_id: str = Field(min_length=1, max_length=128)
+    answers: List[AnswerItem] = Field(min_length=3, max_length=3)
+
+
+class PlacementPhase(BaseModel):
+    phase_name: str = Field(min_length=1, max_length=200)
+    focus_areas: list[str] = Field(max_length=6)
+
+
+class PlacementRoadmap(BaseModel):
+    phases: list[PlacementPhase] = Field(default_factory=list, max_length=3)
 
 
 class PlacementEvaluateResponse(BaseModel):
     profile_id: str
-    estimated_band: float
-    fluency_score: float
+    estimated_band: Optional[float] = None
+    fluency_score: Optional[float] = None
     lexical_score: float
     grammar_score: float
-    pronunciation_score: float
+    pronunciation_score: Optional[float] = None
     pronunciation_feedback: Optional[str] = None
     key_weaknesses: List[str]
     strengths: List[str]
     examiner_verdict: str
     roadmap: Dict[str, Any]
+    score_status: str = "provisional"
+    calibration_status: str = "unverified"
+    scoring_version: str = VERSION
+    prompt_version: str = "placement-transcript-0.4"
+    provider: Optional[str] = None
+    model_id: Optional[str] = None
 
 
 @router.get("/questions")
@@ -56,12 +72,15 @@ async def evaluate_placement(data: PlacementEvaluateRequest, request: Request, d
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
-    if len(data.answers) < 3:
-        raise HTTPException(status_code=400, detail="Vui lòng hoàn thành cả 3 câu hỏi kiểm tra đầu vào.")
+    questions = {q["id"]: q["question"] for q in PLACEMENT_QUESTIONS}
+    if {a.question_id for a in data.answers} != questions.keys() or any(not a.answer.strip() for a in data.answers):
+        raise HTTPException(status_code=422, detail="Vui lòng hoàn thành đúng 3 câu hỏi kiểm tra đầu vào.")
+    if sum(len(a.answer.split()) for a in data.answers) < MIN_WORDS:
+        raise HTTPException(status_code=422, detail=f"Chưa đủ ngữ liệu để đánh giá. Hãy mở rộng ba câu trả lời (ít nhất {MIN_WORDS} từ tổng cộng).")
 
     # Convert answers to prompt format
     formatted_answers = [
-        {"question": a.question, "answer": a.answer}
+        {"question": questions[a.question_id], "answer": a.answer}
         for a in data.answers
     ]
 
@@ -88,27 +107,27 @@ async def evaluate_placement(data: PlacementEvaluateRequest, request: Request, d
         raise HTTPException(status_code=503, detail="Placement evaluation is temporarily unavailable")
 
     eval_result = parse_placement_result(response_text)
-    estimated_band = float(eval_result.get("estimated_band", 5.0))
+    validated = parse_payload({**eval_result, "areas_for_improvement": eval_result.get("key_weaknesses", []),
+                               "examiner_summary": eval_result.get("examiner_verdict", "")})
+    if validated["score_status"] != "provisional" or not meta.get("model_used") or not meta.get("provider_used"):
+        raise HTTPException(status_code=502, detail="Không xác minh được góp ý đầu vào. Câu trả lời vẫn giữ nguyên để thử lại.")
+    try:
+        roadmap = PlacementRoadmap.model_validate(eval_result.get("roadmap", {})).model_dump()
+    except ValidationError:
+        raise HTTPException(status_code=502, detail="Không xác minh được lộ trình đầu vào. Hãy thử lại.")
+    result = PlacementEvaluateResponse(profile_id=profile.id, lexical_score=validated["lexical_score"],
+        grammar_score=validated["grammar_score"], pronunciation_feedback="Chưa đánh giá từ transcript.",
+        key_weaknesses=validated["areas_for_improvement"], strengths=validated["strengths"],
+        examiner_verdict=validated["examiner_summary"], roadmap=roadmap,
+        provider=meta["provider_used"], model_id=meta["model_used"])
 
     # Save to profile in SQLite
     repo.update_placement_result(
         profile_id=profile.id,
-        current_band=estimated_band,
-        roadmap_data=eval_result,
+        current_band=None,
+        roadmap_data=result.model_dump(exclude={"profile_id"}),
         owner_user_id=get_current_principal_id(request)
     )
 
-    return PlacementEvaluateResponse(
-        profile_id=profile.id,
-        estimated_band=estimated_band,
-        fluency_score=float(eval_result.get("fluency_score", estimated_band)),
-        lexical_score=float(eval_result.get("lexical_score", estimated_band)),
-        grammar_score=float(eval_result.get("grammar_score", estimated_band)),
-        pronunciation_score=float(eval_result.get("pronunciation_score", estimated_band)),
-        pronunciation_feedback=eval_result.get("pronunciation_feedback"),
-        key_weaknesses=eval_result.get("key_weaknesses", []),
-        strengths=eval_result.get("strengths", []),
-        examiner_verdict=eval_result.get("examiner_verdict", "Đã hoàn thành kiểm tra đầu vào."),
-        roadmap=eval_result.get("roadmap", {})
-    )
+    return result
 

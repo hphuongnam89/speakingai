@@ -16,7 +16,8 @@ def get_lesson(db: Session, lesson_id: str, version: str) -> Lesson:
     row = db.get(LearningLessonModel, (lesson_id, version))
     if not row:
         raise HTTPException(status_code=404, detail="Lesson not found")
-    return Lesson.model_validate_json(row.payload_json)
+    lesson = Lesson.model_validate_json(row.payload_json)
+    return lesson.model_copy(update={"status": "retired"}) if row.retired else lesson
 
 
 def can_preview(preview: bool) -> bool:
@@ -24,6 +25,8 @@ def can_preview(preview: bool) -> bool:
 
 
 def visible(lesson: Lesson, preview: bool):
+    if lesson.status == "retired":
+        raise HTTPException(status_code=404, detail="Lesson retired; only existing attempts can be resumed")
     if lesson.status != "published" and not can_preview(preview):
         raise HTTPException(status_code=404, detail="Lesson not released")
 
@@ -33,6 +36,13 @@ def owned_attempt(db: Session, attempt_id: str, owner: str, profile: str) -> Lea
     if not row:
         raise HTTPException(status_code=404, detail="Attempt not found")
     return row
+
+
+def visible_to_learner(db, lesson, preview, owner, profile):
+    historical = lesson.status == "retired" and db.query(LearningAttemptModel).filter_by(
+        owner_user_id=owner, profile_id=profile, lesson_id=lesson.id, lesson_version=lesson.version).first() is not None
+    if not historical:
+        visible(lesson, preview)
 
 
 def get_step(lesson: Lesson, step_id: str):

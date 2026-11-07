@@ -37,7 +37,10 @@ def learner(request: Request, db: Session = Depends(get_db)):
 @router.get("/units")
 def units(preview: bool = False, context=Depends(learner), db: Session = Depends(get_db)):
     result = []
-    for lesson in read_pack():
+    for authored in read_pack():
+        lesson = service.get_lesson(db, authored.id, authored.version)
+        if lesson.status == "retired":
+            continue
         if lesson.status == "published" or service.can_preview(preview):
             result.append(lesson.model_dump(exclude={"steps"}))
     return {"lessons": result, "preview": service.can_preview(preview)}
@@ -48,7 +51,7 @@ def media(lesson_id: str, version: str, step_id: str, preview: bool = False,
           context=Depends(learner), db: Session = Depends(get_db)):
     import hashlib
     content = service.get_lesson(db, lesson_id, version)
-    service.visible(content, preview)
+    service.visible_to_learner(db, content, preview, *context)
     step = service.get_step(content, step_id)
     if not step.audio_file:
         raise HTTPException(status_code=404, detail="Audio asset unavailable")
@@ -98,7 +101,7 @@ def speaking_session(attempt_id: str, context=Depends(learner), db: Session = De
 def lesson(lesson_id: str, version: str = Query(max_length=60), preview: bool = False,
            context=Depends(learner), db: Session = Depends(get_db)):
     content = service.get_lesson(db, lesson_id, version)
-    service.visible(content, preview)
+    service.visible_to_learner(db, content, preview, *context)
     return learner_lesson(content)
 
 
@@ -339,7 +342,10 @@ def today(preview: bool = False, minutes: int = Query(20, ge=5, le=120), context
             budget -= 5
         else:
             blockers.append({"lesson_id": lesson.id, "reason": "Đã hết câu ôn mới; cần bổ sung nội dung."})
-    for lesson in read_pack():
+    for authored in read_pack():
+        lesson = service.get_lesson(db, authored.id, authored.version)
+        if lesson.status == "retired":
+            continue
         if lesson.status != "published" and not service.can_preview(preview):
             continue
         observations = progress.observations_for(db, owner, profile, lesson.competency_id)

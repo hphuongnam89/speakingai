@@ -269,7 +269,7 @@ fun OverallBandCard(report: IeltsEvaluationResponse) {
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
-                        text = String.format("%.1f", report.overallBand),
+                        text = report.overallBand?.let { String.format("%.1f", it) } ?: "—",
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryBlue
@@ -277,13 +277,13 @@ fun OverallBandCard(report: IeltsEvaluationResponse) {
                 }
             }
             Spacer(modifier = Modifier.height(10.dp))
-            Text("Good Competent User", style = MaterialTheme.typography.bodyMedium, color = Color.White, fontWeight = FontWeight.SemiBold)
+            Text(if (report.overallBand == null) "Chưa đủ căn cứ chấm overall" else "Provisional practice estimate", style = MaterialTheme.typography.bodyMedium, color = Color.White, fontWeight = FontWeight.SemiBold)
         }
     }
 }
 
 @Composable
-fun CriteriaCard(title: String, score: Float, feedback: String) {
+fun CriteriaCard(title: String, score: Float?, feedback: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -302,7 +302,7 @@ fun CriteriaCard(title: String, score: Float, feedback: String) {
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        text = "Band " + String.format("%.1f", score),
+                        text = score?.let { "Band " + String.format("%.1f", it) } ?: "Chưa đánh giá",
                         color = PrimaryBlue,
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.labelMedium,
@@ -333,7 +333,7 @@ fun ExpressionUpgradeCard(expression: SuggestedExpressionDto) {
             }
             Spacer(modifier = Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Band 7.5+ Upgrade: ", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                Text("Gợi ý tham khảo: ", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                 Text(expression.upgraded, style = MaterialTheme.typography.bodySmall, color = SuccessGreen, fontWeight = FontWeight.Bold)
             }
             if (!expression.context.isNullOrBlank()) {

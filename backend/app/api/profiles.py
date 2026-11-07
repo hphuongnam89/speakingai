@@ -161,26 +161,17 @@ async def recalculate_roadmap(profile_id: str, request: Request, db: Session = D
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
-    current_b = profile.current_band if profile.current_band is not None else 4.5
     target_b = profile.target_band or 7.0
     daily_m = profile.daily_target_minutes or 20
     dur_m = profile.target_duration_months or 3
     total_hours = round((daily_m / 60.0) * (dur_m * 30), 1)
 
-    # Calculate step bands
-    step = (target_b - current_b) / 3.0
-    p1_band = round(current_b + max(0.5, step), 1)
-    p2_band = round(current_b + max(1.0, step * 2), 1)
-    if p2_band >= target_b:
-        p2_band = round(target_b - 0.5, 1)
-
     new_roadmap = {
         "total_hours": total_hours,
-        "feasibility": f"Rất khả thi nếu học viên duy trì đều đặn {daily_m} phút mỗi ngày trong {dur_m} tháng.",
+        "feasibility": "Kế hoạch theo thời gian bạn chọn. Chưa đủ bằng chứng để dự báo khả năng đạt band.",
         "phases": [
             {
                 "phase_name": f"Giai đoạn 1: Chuẩn hóa phát âm & Phản xạ câu đơn/kép",
-                "target_band": min(p1_band, target_b),
                 "focus_areas": [
                     "Xóa triệt để lỗi ngữ pháp thì quá khứ và chia động từ số ít/nhiều",
                     f"Rèn luyện phản xạ nói tiếng Anh {daily_m} phút mỗi ngày cùng AI Coach",
@@ -189,7 +180,6 @@ async def recalculate_roadmap(profile_id: str, request: Request, db: Session = D
             },
             {
                 "phase_name": f"Giai đoạn 2: Tăng tốc làm chủ Part 2 (Nói 2 phút tự tin)",
-                "target_band": min(p2_band, target_b),
                 "focus_areas": [
                     "Nói liên tục 2 phút không ngắc ngứ với cấu trúc Mind-map 4 câu hỏi gợi ý",
                     "Bổ sung vốn Collocations và Idiomatic expressions B2/C1 tự nhiên",
@@ -197,7 +187,7 @@ async def recalculate_roadmap(profile_id: str, request: Request, db: Session = D
                 ]
             },
             {
-                "phase_name": f"Giai đoạn 3: Tư duy phản biện Part 3 & Cán mốc Band {target_b}",
+                "phase_name": "Giai đoạn 3: Luyện tư duy phản biện Part 3",
                 "target_band": target_b,
                 "focus_areas": [
                     "Tư duy phản biện 2 chiều cho các câu hỏi trừu tượng (công nghệ, xã hội, giáo dục)",

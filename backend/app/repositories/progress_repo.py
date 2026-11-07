@@ -1,4 +1,5 @@
 from datetime import datetime, timezone, timedelta
+import json
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.models.progress import DailyStatsModel
@@ -40,7 +41,7 @@ class ProgressRepository:
     def record_activity(self, user_id: str = "default", speaking_minutes: float = 1.0, words: int = 50, mistakes: int = 0, band: float | None = None, owner_user_id: str | None = None):
         stat = self.get_or_create_today(user_id, owner_user_id)
         stat.session_count += 1
-        stat.speaking_minutes += max(0.5, round(speaking_minutes, 1))
+        stat.speaking_minutes += max(0.0, round(speaking_minutes, 2))
         stat.word_count += words
         stat.mistake_count += mistakes
         if stat.speaking_minutes > 0:
@@ -105,25 +106,36 @@ class ProgressRepository:
         total_mins = stat_query.with_entities(func.sum(DailyStatsModel.speaking_minutes)).scalar() or 0.0
         total_sessions = stat_query.with_entities(func.sum(DailyStatsModel.session_count)).scalar() or 0
         total_words = stat_query.with_entities(func.sum(DailyStatsModel.word_count)).scalar() or 0
-        avg_wpm = round(total_words / max(total_mins, 1.0), 1) if total_mins > 0 else 110.0
+        avg_wpm = round(total_words / total_mins, 1) if total_mins > 0 else 0.0
 
-        session_query = self.db.query(SessionModel).filter(SessionModel.user_id == user_id, SessionModel.estimated_band.isnot(None))
+        session_query = self.db.query(SessionModel).filter(SessionModel.user_id == user_id)
         session_query = self._owned(session_query, SessionModel, owner_user_id)
-        latest_session_with_band = session_query.order_by(SessionModel.started_at.desc()).first()
-        latest_band = latest_session_with_band.estimated_band if latest_session_with_band else None
-        band_query = self.db.query(DailyStatsModel).filter(DailyStatsModel.user_id == user_id, DailyStatsModel.estimated_band.isnot(None))
-        band_query = self._owned(band_query, DailyStatsModel, owner_user_id)
-        latest_stat_with_band = band_query.order_by(DailyStatsModel.date.desc()).first()
-        if latest_band is None and latest_stat_with_band:
-            latest_band = latest_stat_with_band.estimated_band
+        latest_band = None
 
         mistake_query = self.db.query(MistakeModel).filter(MistakeModel.user_id == user_id, MistakeModel.resolved == False)
         mistake_query = self._owned(mistake_query, MistakeModel, owner_user_id)
+        criteria = {"fluency_score": None, "lexical_score": None, "grammar_score": None, "pronunciation_score": None}
+        trend = []
+        for item in session_query.order_by(SessionModel.started_at.desc()).limit(10).all():
+            try:
+                payload = json.loads(item.evaluation_json or "{}")
+            except (TypeError, ValueError):
+                payload = {}
+            if payload.get("scoring_version") == "assessment-0.4":
+                trend.append({"date": item.started_at.date().isoformat() if item.started_at else "", "overall_band": item.estimated_band, "fluency": payload.get("fluency_score"), "lexical": payload.get("lexical_score"), "grammar": payload.get("grammar_score"), "pronunciation": payload.get("pronunciation_score")})
+                for key in criteria:
+                    if criteria[key] is None and payload.get(key) is not None:
+                        criteria[key] = float(payload[key])
         return {
-            "streak": max(streak, 1),
+            "streak": streak,
             "total_speaking_minutes": round(float(total_mins), 1),
             "total_sessions": int(total_sessions),
             "avg_wpm": float(avg_wpm),
             "latest_band": float(latest_band) if latest_band else None,
             "total_mistakes": int(mistake_query.count()),
+            "fluency_band": criteria["fluency_score"],
+            "lexical_band": criteria["lexical_score"],
+            "grammar_band": criteria["grammar_score"],
+            "pronunciation_band": criteria["pronunciation_score"],
+            "criteria_trend": trend,
         }

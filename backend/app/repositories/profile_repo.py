@@ -93,7 +93,7 @@ class ProfileRepository:
     def update_placement_result(
         self,
         profile_id: str,
-        current_band: float,
+        current_band: float | None,
         roadmap_data: Dict[str, Any],
         owner_user_id: str | None = None
     ) -> Optional[ProfileModel]:
@@ -101,7 +101,8 @@ class ProfileRepository:
         if not profile:
             return None
 
-        profile.current_band = current_band
+        if current_band is not None:
+            profile.current_band = current_band
         profile.placement_status = "completed"
         profile.roadmap_data = json.dumps(roadmap_data, ensure_ascii=False)
         profile.last_active_at = datetime.now(timezone.utc)

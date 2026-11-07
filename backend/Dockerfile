@@ -10,7 +10,8 @@ FROM python:3.12-slim AS builder
 
 WORKDIR /build
 COPY backend/requirements.txt .
-RUN apt-get update && apt-get install -y --no-install-recommends gcc && \
+RUN pip install --no-cache-dir --upgrade pip==26.3 && \
+    apt-get update && apt-get install -y --no-install-recommends gcc && \
     pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # Final runtime image
@@ -19,7 +20,8 @@ FROM python:3.12-slim AS runner
 WORKDIR /app
 
 # Install curl for container healthcheck
-RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+RUN pip install --no-cache-dir --upgrade pip==26.3 && \
+    apt-get update && apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy installed dependencies from builder

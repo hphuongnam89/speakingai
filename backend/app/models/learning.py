@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, String, Integer, Text, DateTime, UniqueConstraint
+from sqlalchemy import Column, String, Integer, Text, DateTime, UniqueConstraint, Boolean
 
 from app.core.database import Base
 
@@ -12,6 +12,7 @@ class LearningLessonModel(Base):
     version = Column(String, primary_key=True)
     checksum = Column(String, nullable=False)
     payload_json = Column(Text, nullable=False)
+    retired = Column(Boolean, nullable=False, default=False)
 
 
 class LearningAttemptModel(Base):

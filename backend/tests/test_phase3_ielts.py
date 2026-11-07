@@ -82,7 +82,8 @@ def test_ielts_part2_cue_card():
     print(f"Suggested Upgrades: {eval_data['suggested_expressions']}")
     print(f"Disclaimer: {eval_data['disclaimer']}")
 
-    assert 1.0 <= eval_data["overall_band"] <= 9.0
+    assert eval_data["overall_band"] is None and eval_data["fluency_score"] is None
+    assert 1.0 <= eval_data["lexical_score"] <= 9.0
     assert "Estimated score" in eval_data["disclaimer"]
     print("\n>>> ALL IELTS PHASE 3 BACKEND TESTS PASSED! <<<")
 

@@ -11,5 +11,6 @@ def test_evaluation_parser_is_provisional_without_pronunciation():
 
 def test_malformed_evaluation_has_low_confidence_fallback():
     result = parse_evaluation("not json")
-    assert result["confidence"] <= 0.5
-    assert result["scoring_version"] == "phase8-v1"
+    assert result["confidence"] is None
+    assert result["overall_band"] is None and result["lexical_score"] is None
+    assert result["scoring_version"] == "assessment-0.4"

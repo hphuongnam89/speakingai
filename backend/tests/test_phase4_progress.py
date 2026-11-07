@@ -31,7 +31,7 @@ def test_progress_and_adaptive_learning():
     assert summary["total_speaking_minutes"] >= 5.0
     assert summary["total_sessions"] >= 1
     assert summary["avg_wpm"] > 0
-    assert summary["latest_band"] is not None
+    assert summary["latest_band"] is None  # An unversioned historical number is not a validated overall band.
 
     print("\n=== 2. CHECK WEEKLY PROGRESS VIEW ===")
     res_weekly = client.get("/api/v1/progress/weekly")

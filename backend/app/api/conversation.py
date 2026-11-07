@@ -182,8 +182,8 @@ async def get_response(req: ConversationRequest, request: Request, db: Session =
     words_count = len(req.user_text.split())
     ProgressRepository(db).record_activity(
         user_id=session.user_id,
-        speaking_minutes=round(max(words_count / 110.0, 0.25), 2),
-        words=words_count,
+        speaking_minutes=round((user_turn.duration_ms or 0) / 60000.0, 2) if user_turn else 0.0,
+        words=words_count if user_turn and user_turn.duration_ms else 0,
         mistakes=len(corrections) if correction_level != "none" else 0,
         owner_user_id=owner_user_id
     )

@@ -287,7 +287,7 @@ async function checkSpeechAvailability() {
     const modelText = status.model || "medium.en";
     elements.record.title = state.speechAvailable ? `Ghi âm Whisper AI (${devText} - ${modelText})` : status.message;
     elements.speechNote.textContent = state.speechAvailable
-      ? `🎙️ Nhận diện giọng nói: Whisper AI (${devText} · Model ${modelText}). Nhận diện siêu chuẩn xác mọi accent và từ vựng IELTS.`
+      ? `🎙️ Nhận diện giọng nói: Whisper AI (${devText} · Model ${modelText}). Có thể sửa transcript trước khi gửi.`
       : "Ghi âm tạm chưa khả dụng trên backend này; bạn vẫn luyện được bằng cách gõ câu trả lời.";
     elements.composerHint.textContent = state.speechAvailable
       ? "Enter để gửi · Shift + Enter để xuống dòng"
@@ -361,7 +361,7 @@ function renderProfileUI() {
     elements.dailyMinutesLabel.textContent = "0 / 20 phút";
     elements.dailyMinutesBar.style.width = "0%";
     elements.roadmapPhaseTitle.textContent = "Bước 1: Tạo hồ sơ";
-    elements.roadmapPhaseFocus.textContent = "Tạo hồ sơ và làm bài test 3 câu để AI đo Band thực tế và lập lộ trình.";
+    elements.roadmapPhaseFocus.textContent = "Tạo hồ sơ để luyện tập hoặc làm ba câu nhận góp ý đầu vào.";
     elements.viewRoadmapBtn.classList.add("hidden");
 
     elements.sessionGreeting.textContent = "Chào bạn! Hãy tạo hồ sơ để bắt đầu";
@@ -388,14 +388,14 @@ function renderProfileUI() {
 
   // Sidebar widget
   elements.sideProfileName.textContent = p.name;
-  elements.sideProfileLevel.textContent = p.current_band ? `Band ${p.current_band.toFixed(1)} → ${p.target_band}` : `Chưa test → ${p.target_band}`;
+  elements.sideProfileLevel.textContent = p.current_band ? `Mốc đã lưu ${p.current_band.toFixed(1)} → ${p.target_band}` : `Chưa có overall → ${p.target_band}`;
   elements.dailyMinutesLabel.textContent = `${p.today_speaking_minutes} / ${p.daily_target_minutes} phút`;
   const pct = Math.min(100, Math.round((p.today_speaking_minutes / p.daily_target_minutes) * 100));
   elements.dailyMinutesBar.style.width = `${pct}%`;
 
   // Welcome session memory note
   elements.sessionGreeting.textContent = `Chào ${p.name}! Sẵn sàng nói chưa?`;
-  if (p.placement_status === "completed" && p.current_band) {
+  if (p.placement_status === "completed") {
     elements.sessionMemoryNote.textContent = `Mục tiêu: Band ${p.target_band} (${p.daily_target_minutes} phút/ngày). AI đã nạp hồ sơ và các lỗi ngữ pháp cũ của bạn vào trí nhớ.`;
     elements.placementAlertBanner.classList.add("hidden");
     elements.viewRoadmapBtn.classList.remove("hidden");
@@ -407,7 +407,7 @@ function renderProfileUI() {
       elements.roadmapPhaseFocus.textContent = (ph1.focus_areas || []).slice(0, 2).join(". ");
     }
   } else {
-    elements.sessionMemoryNote.textContent = `Bạn chưa làm bài kiểm tra đầu vào. Hãy làm bài test 3 câu để AI đánh giá Band chính xác và thiết lập lộ trình!`;
+    elements.sessionMemoryNote.textContent = "Bạn có thể luyện ngay hoặc làm ba câu để nhận góp ý đầu vào từ transcript.";
     elements.placementAlertBanner.classList.remove("hidden");
     elements.viewRoadmapBtn.classList.add("hidden");
     elements.roadmapPhaseTitle.textContent = "Chưa có lộ trình";
@@ -624,7 +624,7 @@ function renderPlacementQuestion() {
 elements.placementNextBtn.addEventListener("click", async () => {
   const ans = elements.placementAnswer.value.trim();
   if (!ans || ans.length < 5) {
-    alert("Vui lòng nói hoặc gõ câu trả lời (tối thiểu 1-2 câu tiếng Anh) để AI đánh giá chính xác.");
+    showError("Vui lòng nói hoặc gõ câu trả lời tiếng Anh để nhận góp ý.");
     return;
   }
 
@@ -667,228 +667,30 @@ async function submitPlacementTest() {
   } catch (err) {
     elements.placementLoadingView.classList.add("hidden");
     elements.placementTestBody.classList.remove("hidden");
-    alert(`Lỗi khi AI đánh giá: ${err.message}`);
+    showError(`Chưa thể nhận góp ý đầu vào: ${err.message}`);
   }
 }
 
 function buildDiagnosticReportHTML(profile, rd) {
-  const currentBand = profile.current_band ? Number(profile.current_band).toFixed(1) : (rd.estimated_band ? Number(rd.estimated_band).toFixed(1) : "5.5");
-  const targetBand = profile.target_band ? Number(profile.target_band).toFixed(1) : "7.0";
-  const dailyMins = profile.daily_target_minutes || 20;
-  const durationMonths = profile.target_duration_months || 5;
-  const totalHours = rd.roadmap?.total_hours || Math.round((dailyMins / 60) * (durationMonths * 30));
-
-  const fcScore = Number(rd.fluency_score || currentBand).toFixed(1);
-  const lrScore = Number(rd.lexical_score || currentBand).toFixed(1);
-  const graScore = Number(rd.grammar_score || currentBand).toFixed(1);
-  const prScore = Number(rd.pronunciation_score || currentBand).toFixed(1);
-
-  let pronFeedback = rd.pronunciation_feedback;
-  if (!pronFeedback || pronFeedback.includes("??")) {
-    pronFeedback = "Độ rõ âm học đạt 92% (Intelligible), các từ đơn giản phát âm rõ ràng, người nghe hiểu trọn vẹn ý chính. Tuy nhiên, thí sinh thường nuốt hoặc quên bật âm đuôi (final consonants quan trọng như /s/, /z/, /t/, /d/, /ed/), trọng âm từ đa âm tiết còn bị ảnh hưởng bởi ngữ điệu tiếng Việt (hơi ngang đều, thiếu nhấn nhá). Cần chú trọng luyện bật âm đuôi, nhấn đúng trọng âm và ngắt câu theo cụm nghĩa (chunking).";
-  }
-
-  let examinerVerdict = rd.examiner_verdict || "";
-  if (examinerVerdict.includes("??")) {
-    examinerVerdict = "Thí sinh có nền tảng giao tiếp vững chắc. Điểm mạnh nổi bật là sự chính xác về ngữ pháp và khả năng nắm bắt ý chính tốt. Cần mở rộng câu trả lời sâu hơn và trau chuốt collocations để bứt phá lên Band 7.0.";
-  }
-
-  const rawWeaknesses = rd.key_weaknesses || [
-    "Phản hồi còn ngắn, thiếu mở rộng ý chi tiết (extension) ở Part 1 và Part 2.",
-    "Từ vựng còn lặp các cấu trúc đơn giản, cần nạp thêm cụm collocations học thuật.",
-    "Thường nuốt âm đuôi (/s/, /z/, /ed/) và chưa nhấn rõ trọng âm từ đa âm tiết."
-  ];
-  const weaknesses = rawWeaknesses.map(w => w.includes("??") ? "Cần mở rộng ý chi tiết và bật rõ âm đuôi khi nói." : w);
-
-  const rawStrengths = rd.strengths || [
-    "Ngữ pháp cơ bản chính xác, không mắc lỗi sai nghiêm trọng về thì hoặc cấu trúc câu.",
-    "Phát âm cơ bản rõ ràng, phản xạ giao tiếp tự tin, đúng trọng tâm câu hỏi."
-  ];
-  const strengths = rawStrengths.map(s => s.includes("??") ? "Phản xạ giao tiếp tự tin, trả lời đúng trọng tâm câu hỏi." : s);
-
-  const gap = Math.max(0, parseFloat(targetBand) - parseFloat(currentBand)).toFixed(1);
-  const progressPct = Math.min(100, Math.max(20, Math.round(((parseFloat(currentBand) - 3.5) / (parseFloat(targetBand) - 3.5)) * 100)));
-
+  const current = rd.scoring_version === "assessment-0.4" ? rd : {};
+  const score = value => Number.isFinite(value) ? value.toFixed(1) : "Chưa đánh giá";
+  const bullets = values => Array.isArray(values)
+    ? values.filter(v => typeof v === "string").map(v => `<li>${escapeHtml(v)}</li>`).join("")
+    : "";
   return `
-    <div class="eval-hero-banner">
-      <div class="eval-hero-score-badge">
-        <span class="eval-band-num">${currentBand}</span>
-        <span class="eval-band-tag">OVERALL BAND</span>
-      </div>
-      <div class="eval-hero-info">
-        <div class="eval-hero-pill-row">
-          <span class="eval-status-pill">✓ CHẨN ĐOÁN HOÀN TẤT</span>
-          <span class="eval-level-pill">TRÌNH ĐỘ B1 - B2</span>
-        </div>
-        <h3 class="eval-hero-title">Báo Cáo Đánh Giá Năng Lực IELTS Speaking</h3>
-        <p class="eval-hero-sub">Học viên: <strong>${escapeHtml(profile.name)}</strong> · Mục tiêu: <strong>Band ${targetBand}</strong> (${dailyMins}p/ngày trong ${durationMonths} tháng)</p>
-        
-        <div class="eval-gap-bar-container">
-          <div class="eval-gap-labels">
-            <span>Hiện tại: <strong>Band ${currentBand}</strong></span>
-            <span>Khoảng cách mục tiêu: <strong>+${gap} Band</strong></span>
-            <span>Mục tiêu: <strong>Band ${targetBand}</strong></span>
-          </div>
-          <div class="eval-gap-track">
-            <div class="eval-gap-fill" style="width: ${progressPct}%;"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 4 CORE CRITERIA CARDS -->
-    <div class="eval-criteria-grid">
-      <div class="eval-criteria-card fc-card">
-        <div class="criteria-card-head">
-          <span class="criteria-icon">🎙️</span>
-          <span class="criteria-code">FC</span>
-        </div>
-        <span class="criteria-title">Độ trôi chảy &amp; Mạch lạc</span>
-        <div class="criteria-score-row">
-          <span class="criteria-main-score">${fcScore}</span>
-          <span class="criteria-max-score">/ 9.0</span>
-        </div>
-        <div class="criteria-meter-track"><div class="criteria-meter-fill fc-fill" style="width: ${(parseFloat(fcScore)/9)*100}%;"></div></div>
-        <span class="criteria-subtext">Nhịp độ tự nhiên · Ít ngập ngừng</span>
-      </div>
-
-      <div class="eval-criteria-card lr-card">
-        <div class="criteria-card-head">
-          <span class="criteria-icon">📚</span>
-          <span class="criteria-code">LR</span>
-        </div>
-        <span class="criteria-title">Vốn từ vựng học thuật</span>
-        <div class="criteria-score-row">
-          <span class="criteria-main-score">${lrScore}</span>
-          <span class="criteria-max-score">/ 9.0</span>
-        </div>
-        <div class="criteria-meter-track"><div class="criteria-meter-fill lr-fill" style="width: ${(parseFloat(lrScore)/9)*100}%;"></div></div>
-        <span class="criteria-subtext">Đủ từ đời sống · Cần Collocations</span>
-      </div>
-
-      <div class="eval-criteria-card gra-card">
-        <div class="criteria-card-head">
-          <span class="criteria-icon">✍️</span>
-          <span class="criteria-code">GRA</span>
-        </div>
-        <span class="criteria-title">Ngữ pháp &amp; Cấu trúc câu</span>
-        <div class="criteria-score-row">
-          <span class="criteria-main-score">${graScore}</span>
-          <span class="criteria-max-score">/ 9.0</span>
-        </div>
-        <div class="criteria-meter-track"><div class="criteria-meter-fill gra-fill" style="width: ${(parseFloat(graScore)/9)*100}%;"></div></div>
-        <span class="criteria-subtext">Đúng thì quá khứ · Cần thêm câu phức</span>
-      </div>
-
-      <div class="eval-criteria-card pr-card">
-        <div class="criteria-card-head">
-          <span class="criteria-icon">🗣️</span>
-          <span class="criteria-code">PR</span>
-        </div>
-        <span class="criteria-title">Phát âm &amp; Nhịp điệu</span>
-        <div class="criteria-score-row">
-          <span class="criteria-main-score">${prScore}</span>
-          <span class="criteria-max-score">/ 9.0</span>
-        </div>
-        <div class="criteria-meter-track"><div class="criteria-meter-fill pr-fill" style="width: ${(parseFloat(prScore)/9)*100}%;"></div></div>
-        <span class="criteria-subtext">Độ rõ âm học 94% · Trọng âm tốt</span>
-      </div>
-    </div>
-
-    <!-- EXAMINER VERDICT CARD -->
-    ${examinerVerdict ? `
     <div class="eval-examiner-card">
-      <div class="eval-examiner-badge">👨‍🏫 Ý KIẾN GIÁM KHẢO CHỦ KHẢO (EXAMINER VERDICT)</div>
-      <p class="eval-examiner-quote">${escapeHtml(examinerVerdict)}</p>
-    </div>` : ""}
-
-    <!-- PRONUNCIATION IN-DEPTH AUDIT CARD -->
-    <div class="eval-pronunciation-card">
-      <div class="pronunciation-card-head">
-        <span class="pronunciation-badge">🗣️ PHÂN TÍCH CHUYÊN SÂU PHÁT ÂM (PRONUNCIATION - BAND ${prScore})</span>
-        <span class="pronunciation-accuracy-pill">Độ rõ âm học Whisper: 92%</span>
-      </div>
-      <p class="pronunciation-main-feedback">
-        ${escapeHtml(pronFeedback)}
-      </p>
-      <div class="pronunciation-pillars-grid">
-        <div class="pronunciation-pillar-item">
-          <div class="pillar-label">
-            <span>🎯 Âm đuôi &amp; Phụ âm (Final Consonants)</span>
-            <span class="pillar-status need-work">Cần khắc phục</span>
-          </div>
-          <p class="pillar-desc">Bật rõ âm cuối /s/, /z/, /t/, /d/, /ed/ khi kết thúc từ, tránh nuốt âm khiến giám khảo nhầm thì quá khứ hoặc số nhiều.</p>
-        </div>
-        <div class="pronunciation-pillar-item">
-          <div class="pillar-label">
-            <span>🎵 Trọng âm từ &amp; Câu (Stress &amp; Rhythm)</span>
-            <span class="pillar-status average">Mức khá</span>
-          </div>
-          <p class="pillar-desc">Nhấn đúng trọng âm từ 2-3 âm tiết (như *be-<strong>GIN</strong>-ning*, *<strong>IN</strong>-ter-est-ing*), kéo dài nguyên âm ở từ khóa chính.</p>
-        </div>
-        <div class="pronunciation-pillar-item">
-          <div class="pillar-label">
-            <span>🌊 Ngữ điệu &amp; Ngắt cụm (Intonation &amp; Chunking)</span>
-            <span class="pillar-status good">Tự nhiên</span>
-          </div>
-          <p class="pillar-desc">Ngắt nghỉ tự nhiên theo cụm nghĩa (Thought Groups), hạ giọng ở cuối câu khẳng định và lên giọng ở câu hỏi nghi vấn.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- STRENGTHS & WEAKNESSES SPLIT -->
-    <div class="eval-split-grid">
-      <div class="eval-split-card weaknesses-card">
-        <div class="split-card-title warning-title">
-          <span class="title-icon">⚠️</span>
-          <h4>LỖ HỔNG THEN CHỐT CẦN BẺ GÃY:</h4>
-        </div>
-        <ul class="eval-bullet-list warning-bullets">
-          ${weaknesses.map(w => `<li>${escapeHtml(w)}</li>`).join("")}
-        </ul>
-      </div>
-
-      <div class="eval-split-card strengths-card">
-        <div class="split-card-title success-title">
-          <span class="title-icon">✅</span>
-          <h4>ĐIỂM TỰA NỀN TẢNG ĐÃ ĐẠT:</h4>
-        </div>
-        <ul class="eval-bullet-list success-bullets">
-          ${strengths.map(s => `<li>${escapeHtml(s)}</li>`).join("")}
-        </ul>
-      </div>
-    </div>
-
-    <!-- STUDY COMMITMENT DASHBOARD -->
-    <div class="eval-commitment-box">
-      <div class="commitment-kpi-grid">
-        <div class="kpi-item">
-          <span class="kpi-label">MỤC TIÊU BAND</span>
-          <span class="kpi-val highlight-green">Band ${targetBand}</span>
-        </div>
-        <div class="kpi-item">
-          <span class="kpi-label">CƯỜNG ĐỘ</span>
-          <span class="kpi-val">${dailyMins} phút / ngày</span>
-        </div>
-        <div class="kpi-item">
-          <span class="kpi-label">LỘ TRÌNH</span>
-          <span class="kpi-val">${durationMonths} tháng</span>
-        </div>
-        <div class="kpi-item">
-          <span class="kpi-label">TỔNG THỜI GIAN NÓI</span>
-          <span class="kpi-val highlight-gold">${totalHours} giờ</span>
-        </div>
-      </div>
-      <div class="commitment-feasibility">
-        <span class="feasibility-badge">📈 Đánh giá khả thi:</span>
-        <span class="feasibility-text">${escapeHtml(rd.roadmap?.feasibility || "Rất khả thi nếu duy trì đều đặn 20 phút mỗi ngày theo 3 giai đoạn.")}</span>
-      </div>
+      <h3>Góp ý đầu vào từ transcript</h3>
+      <p>Học viên: <strong>${escapeHtml(profile.name)}</strong> · Mục tiêu: ${score(profile.target_band)}</p>
+      <p>Ước lượng luyện tập chưa hiệu chuẩn. Overall, phát âm và lưu loát theo âm thanh chưa được đánh giá.</p>
+      <p>Từ vựng: ${score(current.lexical_score)} · Ngữ pháp: ${score(current.grammar_score)}</p>
+      <p>${escapeHtml(current.examiner_verdict || "Báo cáo lịch sử chưa được xác minh.")}</p>
+      <ul>${bullets(current.strengths)}${bullets(current.key_weaknesses)}</ul>
     </div>
   `;
 }
 
 function buildRoadmapPhasesHTML(phases) {
-  if (!phases || !phases.length) {
+  if (!Array.isArray(phases) || !phases.length) {
     return `
       <div class="roadmap-summary-box" style="margin-top: 14px;">
         <p style="color: #636b61; font-size: 13px;">💡 Chưa có bài test chẩn đoán đầu vào để chia chi tiết 3 giai đoạn.</p>
@@ -903,7 +705,7 @@ function buildRoadmapPhasesHTML(phases) {
       <span class="phases-subtitle">Lộ trình được AI cá nhân hóa bám sát lỗ hổng chẩn đoán của bạn</span>
     </div>
     <div class="eval-timeline-container">
-      ${phases.map((phase, idx) => `
+      ${phases.filter(phase => phase && typeof phase === "object").map((phase, idx) => `
         <div class="eval-timeline-step ${idx === 0 ? "is-active-phase" : ""}">
           <div class="timeline-step-indicator">
             <span class="step-num">${idx + 1}</span>
@@ -915,10 +717,10 @@ function buildRoadmapPhasesHTML(phases) {
                 <span class="step-phase-tag">Giai đoạn ${idx + 1}</span>
                 <strong class="step-phase-name">${escapeHtml(phase.phase_name)}</strong>
               </div>
-              <span class="step-target-badge">Mục tiêu Band ${phase.target_band}</span>
+              ${Number.isFinite(phase.target_band) ? `<span class="step-target-badge">Mục tiêu Band ${phase.target_band}</span>` : ""}
             </div>
             <ul class="step-focus-list">
-              ${(phase.focus_areas || []).map(area => `<li><span class="check-bullet">▹</span>${escapeHtml(area)}</li>`).join("")}
+              ${(Array.isArray(phase.focus_areas) ? phase.focus_areas : []).map(area => `<li><span class="check-bullet">▹</span>${escapeHtml(area)}</li>`).join("")}
             </ul>
           </div>
         </div>
@@ -2196,7 +1998,7 @@ async function sendAnswer(text, retryRequestId = null) {
         evalWrapper.style.borderRadius = "10px";
         evalWrapper.innerHTML = `
           <strong style="display:block; color:#166534; font-size:12.5px; margin-bottom:4px;">🎯 Phần thi nói đã hoàn thành!</strong>
-          <p style="margin:0 0 10px; font-size:11.5px; color:#15803d;">Bạn có muốn nhận đánh giá chi tiết 4 tiêu chí IELTS và các gợi ý nâng cấp câu nói từ Giám khảo AI không?</p>
+          <p style="margin:0 0 10px; font-size:11.5px; color:#15803d;">Xem góp ý luyện tập từ transcript. Điểm chưa hiệu chuẩn; phát âm và lưu loát theo âm thanh chưa được đánh giá.</p>
         `;
         const evalBtn = document.createElement("button");
         evalBtn.className = "primary-button";
@@ -2208,8 +2010,14 @@ async function sendAnswer(text, retryRequestId = null) {
           evalBtn.textContent = "AI Giám khảo đang chấm điểm… ⏳";
           try {
             const evalRes = await api(`/ielts/evaluate/${state.sessionId}`, { method: "POST" });
-            addMessage("assistant", `🎯 **KẾT QUẢ ĐÁNH GIÁ IELTS CHÍNH THỨC (BAND ${evalRes.overall_band})**\n\n- **Fluency & Coherence (${evalRes.fluency_score}):** ${evalRes.fluency_feedback}\n- **Lexical Resource (${evalRes.lexical_score}):** ${evalRes.lexical_feedback}\n- **Grammatical Range (${evalRes.grammar_score}):** ${evalRes.grammar_feedback}\n- **Pronunciation (${evalRes.pronunciation_score || "7.0"}):** ${evalRes.pronunciation_feedback || "Phát âm rõ ràng, nhịp điệu tự nhiên."}\n\n**Điểm mạnh nổi bật:**\n${(evalRes.strengths || []).map(s => "- " + s).join("\n")}\n\n**Gợi ý nâng cấp từ vựng & cấu trúc:**\n${(evalRes.suggested_expressions || []).map(e => `- Thay vì *"${e.original}"* ➔ Hãy nói: **"${e.better}"** (${e.reason})`).join("\n")}`);
-            evalWrapper.remove();
+            const score = value => Number.isFinite(value) ? value.toFixed(1) : "Chưa đánh giá";
+            addMessage("assistant", `**GÓP Ý LUYỆN TẬP — CHƯA HIỆU CHUẨN**\n${evalRes.disclaimer}\n\n${evalRes.examiner_summary}\n\n- Overall: ${score(evalRes.overall_band)}\n- Fluency: ${score(evalRes.fluency_score)}\n- Lexical Resource (${score(evalRes.lexical_score)}): ${evalRes.lexical_feedback}\n- Grammar (${score(evalRes.grammar_score)}): ${evalRes.grammar_feedback}\n- Pronunciation: ${score(evalRes.pronunciation_score)}\n\n${evalRes.limitation}\n\n**Gợi ý tham khảo:**\n${(evalRes.suggested_expressions || []).map(e => `- ${e.original} → ${e.upgraded}${e.context ? " (" + e.context + ")" : ""}`).join("\n")}`);
+            if (evalRes.score_status === "unavailable") {
+              evalBtn.disabled = false;
+              evalBtn.textContent = "Thử lại đánh giá";
+            } else {
+              evalWrapper.remove();
+            }
           } catch (err) {
             evalBtn.disabled = false;
             evalBtn.textContent = "Thử lại";

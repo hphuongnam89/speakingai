@@ -1,4 +1,5 @@
 import json
+import hmac
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.core.config import settings
@@ -28,12 +29,49 @@ from app.schemas.ielts import (
     IeltsEvaluationResponse,
     CueCard,
     SuggestedExpression,
-    EvaluationFeedbackRequest
+    EvaluationFeedbackRequest,
+    CalibrationSampleRequest
 )
 from app.models.scoring import EvaluationFeedbackModel
+from app.models.scoring import CalibrationSampleModel
+from app.services.scoring_calibration import apply_calibration
+from app.services.assessment import VERSION, MIN_WORDS, abstain, report
 from app.core.auth import get_current_user_id, get_current_principal_id
 
 router = APIRouter(prefix="/ielts", tags=["ielts"])
+
+def require_calibration_admin(request: Request):
+    supplied = request.headers.get("X-Calibration-Key", "")
+    if not settings.CALIBRATION_ADMIN_KEY or not hmac.compare_digest(supplied.encode(), settings.CALIBRATION_ADMIN_KEY.encode()):
+        raise HTTPException(status_code=403, detail="Calibration admin key required")
+
+
+@router.get("/calibration/status")
+def calibration_status(request: Request, db: Session = Depends(get_db)):
+    require_calibration_admin(request)
+    count = db.query(CalibrationSampleModel).filter(CalibrationSampleModel.consented == "true").count()
+    return {"consented_samples": count, "ready": False, "calibration_status": "unverified",
+            "reason": "No approved held-out evaluation; sample count alone does not establish calibration"}
+
+@router.post("/calibration/samples")
+def add_calibration_sample(sample: CalibrationSampleRequest, request: Request, db: Session = Depends(get_db)):
+    require_calibration_admin(request)
+    if not sample.consented:
+        raise HTTPException(status_code=422, detail="Consent is required before storing a sample")
+    values = {**sample.model_dump(), "consented": "true"}
+    existing = db.query(CalibrationSampleModel).filter_by(sample_key=sample.sample_key).first()
+    if existing:
+        if any(getattr(existing, key) != value for key, value in values.items()):
+            raise HTTPException(status_code=409, detail="Sample key already exists with different content")
+    else:
+        from sqlalchemy.exc import IntegrityError
+        db.add(CalibrationSampleModel(**values))
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            raise HTTPException(status_code=409, detail="Sample key already exists; reload before retrying")
+    return {"sample_key": sample.sample_key, "stored": True, "calibration_status": "unverified"}
 
 @router.get("/topics")
 def list_topics():
@@ -359,11 +397,13 @@ async def evaluate_ielts_session(session_id: str, request: Request, db: Session 
     if session.evaluation_json:
         try:
             cached_data = json.loads(session.evaluation_json)
-            return IeltsEvaluationResponse(
-                session_id=session.id,
-                **cached_data
-            )
-        except Exception:
+            if cached_data.get("scoring_version") == VERSION and cached_data.get("score_status") in {"provisional", "insufficient_evidence"}:
+                return IeltsEvaluationResponse(session_id=session.id, **cached_data)
+            if cached_data.get("scoring_version") != VERSION:
+                legacy = report(abstain("Historical assessment is unverified; original record is preserved."),
+                    turn_repo.get_by_session(session_id, owner_user_id))
+                return IeltsEvaluationResponse(session_id=session.id, **legacy)
+        except (ValueError, TypeError, AttributeError):
             pass
 
     turns = turn_repo.get_by_session(session_id, owner_user_id)
@@ -374,27 +414,45 @@ async def evaluate_ielts_session(session_id: str, request: Request, db: Session 
         topic=session.topic
     )
 
-    model_router = get_model_router()
-    raw_eval = await model_router.chat(
-        eval_messages,
-        options={"timeout": settings.LLM_TIMEOUT},
-    )
-    eval_data = parse_evaluation(raw_eval)
+    user_words = sum(len(t.transcript.split()) for t in turns if t.role == "user")
+    meta = {}
+    if sum(len(t["content"]) for t in turn_dicts) > 20000:
+        return IeltsEvaluationResponse(session_id=session.id, **abstain("Transcript exceeds the assessment context limit; no estimate was generated."))
+    if user_words < MIN_WORDS:
+        eval_data = report(abstain(), turns)
+    else:
+        from app.repositories.settings_repo import SettingsRepository
+        preferences = SettingsRepository(db).get_or_create(user_id)
+        options = {"timeout": settings.LLM_TIMEOUT, "local_only": True, "cloud_fallback": False,
+                   "preference": "local_only", "max_tokens": 1800}
+        if preferences.preferred_model:
+            options["model"] = preferences.preferred_model
+        try:
+            raw_eval, meta = await get_model_router().chat_with_metadata(eval_messages, options=options)
+        except (HTTPException, TimeoutError, ConnectionError):
+            raise HTTPException(status_code=503, detail="Assessment temporarily unavailable; your transcript is safe")
+        eval_data = report(apply_calibration(parse_evaluation(raw_eval), []), turns, meta)
+    if eval_data["score_status"] in {"unavailable", "insufficient_evidence"}:
+        # A malformed/provider failure is retryable and must not poison the cached report.
+        return IeltsEvaluationResponse(session_id=session.id, **eval_data)
 
     # Calculate actual speaking minutes from user turns (no hardcoding)
     user_words = sum(len(t['content'].split()) for t in turn_dicts if t['role'] == 'user')
     total_audio_ms = sum(t.duration_ms for t in turns if t.role == 'user' and t.duration_ms)
-    if total_audio_ms > 0:
-        actual_speaking_minutes = round(total_audio_ms / 60000.0, 2)
-    else:
-        # Standard IELTS rate ~120 words per minute
-        actual_speaking_minutes = round(max(user_words / 120.0, 0.5), 2)
+    actual_speaking_minutes = round(total_audio_ms / 60000.0, 2)
 
-    # Persist in DB
-    session.estimated_band = eval_data["overall_band"]
-    session.evaluation_json = json.dumps(eval_data)
-    session.total_speaking_ms = int(round(actual_speaking_minutes * 60000))
-    session_repo.finish(session.id, user_id, owner_user_id)
+    # One winner persists the report; a concurrent retry must not count activity twice.
+    from datetime import datetime, timezone
+    claimed = db.query(SessionModel).filter(SessionModel.id == session.id,
+        SessionModel.evaluation_json == session.evaluation_json).update({
+            "estimated_band": eval_data["overall_band"], "evaluation_json": json.dumps(eval_data),
+            "total_speaking_ms": total_audio_ms, "ended_at": datetime.now(timezone.utc)}, synchronize_session=False)
+    if not claimed:
+        db.rollback()
+        db.refresh(session)
+        if session.evaluation_json:
+            return IeltsEvaluationResponse(session_id=session.id, **json.loads(session.evaluation_json))
+        raise HTTPException(status_code=409, detail="Assessment changed; reload and retry")
     db.commit()
 
     # Record daily speaking progress with measured speaking minutes
@@ -402,35 +460,13 @@ async def evaluate_ielts_session(session_id: str, request: Request, db: Session 
     ProgressRepository(db).record_activity(
         user_id=session.user_id,
         speaking_minutes=actual_speaking_minutes,
-        words=user_words,
+        words=sum(len(t.transcript.split()) for t in turns if t.role == "user" and t.duration_ms),
         mistakes=len(eval_data.get("areas_for_improvement", [])),
         band=eval_data["overall_band"],
         owner_user_id=owner_user_id
     )
 
-    return IeltsEvaluationResponse(
-        session_id=session.id,
-        overall_band=eval_data["overall_band"],
-        fluency_score=eval_data["fluency_score"],
-        fluency_feedback=eval_data["fluency_feedback"],
-        lexical_score=eval_data["lexical_score"],
-        lexical_feedback=eval_data["lexical_feedback"],
-        grammar_score=eval_data["grammar_score"],
-        grammar_feedback=eval_data["grammar_feedback"],
-        pronunciation_score=eval_data["pronunciation_score"],
-        strengths=eval_data["strengths"],
-        areas_for_improvement=eval_data["areas_for_improvement"],
-        suggested_expressions=[SuggestedExpression(**s) for s in eval_data["suggested_expressions"]],
-        examiner_summary=eval_data["examiner_summary"],
-        disclaimer="Estimated score — provisional practice estimate, not an official IELTS result.",
-        score_status=eval_data.get("score_status", "provisional"),
-        confidence=eval_data.get("confidence", 0.25),
-        confidence_range=eval_data.get("confidence_range", "±1.0 band; calibration pending"),
-        limitation=eval_data.get("limitation", "Pronunciation is not scored from transcript alone."),
-        scoring_version=eval_data.get("scoring_version", "phase8-v1"),
-        model_id=eval_data.get("model_id"),
-        prompt_version=eval_data.get("prompt_version", "ielts-evaluation-v1")
-    )
+    return IeltsEvaluationResponse(session_id=session.id, **eval_data)
 
 @router.post("/evaluate/{session_id}/feedback")
 def submit_evaluation_feedback(session_id: str, data: EvaluationFeedbackRequest, request: Request, db: Session = Depends(get_db)):

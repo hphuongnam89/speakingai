@@ -3,8 +3,8 @@ version: '3.8'
 services:
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: ielts-ai-backend
     ports:
       - "127.0.0.1:8000:8000"
@@ -13,10 +13,10 @@ services:
     env_file:
       - .env
     environment:
-      - ENVIRONMENT=production
+      - ENVIRONMENT=${ENVIRONMENT:-production}
       - DATABASE_URL=${DATABASE_URL:-sqlite:///./data/app.db}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-ornith-1.5:9b}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-ornith1.5:9b}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
       - DEEPSEEK_ENABLED=${DEEPSEEK_ENABLED:-false}
       - PRONUNCIATION_ASSESSOR_URL=${PRONUNCIATION_ASSESSOR_URL:-}
@@ -54,7 +54,7 @@ services:
     image: ollama/ollama:latest
     environment:
       - OLLAMA_HOST=http://ollama:11434
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-ornith-1.5:9b}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-ornith1.5:9b}
     entrypoint: ["/bin/sh", "-c"]
     command: ["ollama pull \"$$OLLAMA_MODEL\""]
     depends_on:

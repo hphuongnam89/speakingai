@@ -114,6 +114,9 @@ class ProfileRepository:
         if not profile:
             return False
 
+        from app.services.learning import delete_learning_data
+        delete_learning_data(self.db, profile.owner_user_id, profile.id)
+
         # Find all sessions of this profile
         session_query = self.db.query(SessionModel).filter(SessionModel.user_id == profile_id)
         if owner_user_id is not None:

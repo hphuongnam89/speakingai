@@ -135,6 +135,7 @@ async def get_response(req: ConversationRequest, request: Request, db: Session =
     
     model_router = get_model_router()
     options = {
+        "model": user_settings.preferred_model or settings.OLLAMA_MODEL,
         "preference": getattr(user_settings, "provider_preference", "auto"),
         "local_only": getattr(user_settings, "local_only", False),
         "cloud_fallback": getattr(user_settings, "cloud_fallback", False),

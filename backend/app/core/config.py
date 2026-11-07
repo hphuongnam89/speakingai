@@ -4,7 +4,7 @@ from pydantic import model_validator
 class Settings(BaseSettings):
     APP_NAME: str = "IELTS Speaking AI Coach"
     OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "ornith-1.5:9b"
+    OLLAMA_MODEL: str = "ornith1.5:9b"
     DEEPSEEK_API_KEY: str = ""
     DEEPSEEK_ENABLED: bool = False
     DEEPSEEK_BASE_URL: str = "https://api.deepseek.com/v1"
@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost,http://127.0.0.1"
     ENVIRONMENT: str = "development"
     ENABLE_SECURITY_HEADERS: bool = True
+    CALIBRATION_ADMIN_KEY: str = ""
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

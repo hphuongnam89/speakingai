@@ -9,6 +9,7 @@ from app.models.audio import AudioRecordingModel
 from app.models.adaptive_plan import AdaptivePlanModel
 from app.models.scoring import EvaluationFeedbackModel, CalibrationSampleModel
 from app.models.pilot import PilotRunModel, PilotEventModel, PilotFeedbackModel
+from app.models.learning import LearningLessonModel, LearningAttemptModel, LearningEventModel, LearningObservationModel, LearningReviewModel
 
 __all__ = [
     "SessionModel",
@@ -25,4 +26,9 @@ __all__ = [
     "PilotRunModel",
     "PilotEventModel",
     "PilotFeedbackModel",
+    "LearningLessonModel",
+    "LearningAttemptModel",
+    "LearningEventModel",
+    "LearningObservationModel",
+    "LearningReviewModel",
 ]

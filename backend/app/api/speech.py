@@ -156,15 +156,22 @@ def transcribe_audio(
 
 
 @router.get("/audio/{turn_id}")
-def get_turn_audio(turn_id: str, db: Session = Depends(get_db)):
-    rec = db.query(AudioRecordingModel).filter(AudioRecordingModel.turn_id == turn_id).first()
+def get_turn_audio(turn_id: str, request: Request, db: Session = Depends(get_db)):
+    owner_user_id = get_current_principal_id(request)
+    rec = db.query(AudioRecordingModel).filter(
+        AudioRecordingModel.turn_id == turn_id,
+        AudioRecordingModel.owner_user_id == owner_user_id,
+    ).first()
     if rec and rec.file_path and os.path.exists(rec.file_path):
         media_type = rec.content_type or "audio/webm"
         return FileResponse(rec.file_path, media_type=media_type)
     
     # Fallback to TurnModel.audio_path
     from app.models.turn import TurnModel
-    turn = db.query(TurnModel).filter(TurnModel.id == turn_id).first()
+    turn = db.query(TurnModel).filter(
+        TurnModel.id == turn_id,
+        TurnModel.owner_user_id == owner_user_id,
+    ).first()
     if turn and turn.audio_path and os.path.exists(turn.audio_path):
         return FileResponse(turn.audio_path, media_type="audio/webm")
         

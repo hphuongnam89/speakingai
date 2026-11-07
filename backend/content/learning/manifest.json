@@ -1,0 +1,38 @@
+{
+  "id": "learning-foundation-draft",
+  "version": "0.1.0",
+  "competencies": [
+    "reading.simple_sentence",
+    "vocabulary.days_times",
+    "writing.simple_sentence",
+    "speaking.simple_sentence",
+    "reading.follow_change",
+    "listening.follow_change",
+    "writing.explain_choice",
+    "speaking.explain_choice"
+  ],
+  "lessons": [
+    {
+      "file": "reading-change-020.json",
+      "sha256": "dde4d5abd80bb55423594330f42d5e30531fad1afba5c93d11bf60903a875f7e"
+    },
+    {
+      "file": "listening-change-020.json",
+      "sha256": "0348cddb983f14af5902093c41e083132844f2006a9e68dea10ebf314d8fc2d6"
+    },
+    {
+      "file": "writing-change-020.json",
+      "sha256": "91e75422a5d842d14143d80fabd6dcd53ca1e67805cc4275e82a364e54720b30"
+    },
+    {
+      "file": "speaking-change-020.json",
+      "sha256": "e1b848ab445a376e86a109bbcdc7a0d6154aa53535f89b226173efd54d6e20eb"
+    }
+  ],
+  "audio_provenance": {
+    "method": "macOS say",
+    "voice": "Samantha",
+    "synthetic": true,
+    "human_reviewed": false
+  }
+}

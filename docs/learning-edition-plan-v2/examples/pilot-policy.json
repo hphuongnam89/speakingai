@@ -1,0 +1,16 @@
+{
+  "policy_version": "learning-pilot-0.1",
+  "status": "proposed-not-validated",
+  "scientific_or_ielts_standard": false,
+  "initial_state": "not_started",
+  "states": ["not_started", "learning", "practicing", "provisionally_mastered", "needs_review"],
+  "deterministic_provisional": {"new_unassisted_items": 4, "minimum_met": 3, "unresolved_critical_error_allowed": false},
+  "productive_provisional": {"new_unassisted_tasks": 2, "minimum_changed_context_tasks": 1, "objective_rubric_required": true, "insufficient_evidence_state": "practicing"},
+  "review_intervals_days": [2, 7],
+  "review_clock": "server-UTC-with-user-timezone-display",
+  "seen_item_policy": "do-not-count-as-new-independent-evidence",
+  "no_new_item_policy": "report-insufficient-evidence",
+  "existing_srs_policy": "reuse-existing-scheduler-for-the-same-card-do-not-double-schedule",
+  "promotion_from_completion_or_ai_rewrite": false,
+  "learner_may_reschedule": true
+}

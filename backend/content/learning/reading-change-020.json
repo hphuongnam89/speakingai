@@ -1,0 +1,190 @@
+{
+  "id": "reading-change",
+  "version": "0.2.0",
+  "unit_id": "change-plans",
+  "title": "Đọc để hiểu một thay đổi",
+  "skill": "reading",
+  "objective": "Xác định thông tin hiện hành và chỉ được câu làm bằng chứng.",
+  "competency_id": "reading.follow_change",
+  "prerequisites": [
+    "reading.simple_sentence"
+  ],
+  "status": "draft",
+  "estimated_minutes": 15,
+  "provenance": {
+    "source": "Original Learning Edition draft, 2026-11-06",
+    "license": "unassigned-do-not-release",
+    "ai_assisted": true,
+    "reviewer_id": null,
+    "reviewed_at": null
+  },
+  "steps": [
+    {
+      "id": "explain",
+      "kind": "explain",
+      "instruction": "Thông tin xuất hiện trước chưa chắc là quyết định cuối cùng. Theo dõi quan hệ giữa các câu và dấu hiệu đổi ý; giải thích ý nghĩa thay vì chỉ dò từ."
+    },
+    {
+      "id": "example",
+      "kind": "worked_example",
+      "instruction": "Mẫu nêu kế hoạch cũ rồi sửa lại. Hãy chỉ ra thông tin cuối cùng và câu báo thay đổi.",
+      "stimulus": "The workshop was planned for Monday, but the room is not ready. It is now on Wednesday."
+    },
+    {
+      "id": "guided",
+      "kind": "guided",
+      "instruction": "Thử làm với gợi ý. Nếu chưa rõ, yêu cầu hướng chú ý trước khi xem lời giải.",
+      "stimulus": "We planned to meet at 10, but Mai has a class then. Let's meet at 11 instead.",
+      "hints": [
+        "Thông tin nào được sửa lại?",
+        "Đối chiếu thông tin đầu và cuối.",
+        "Đọc/nghe lại câu cuối trước khi chọn.",
+        "Quyết định cuối cùng là 11."
+      ],
+      "items": [
+        {
+          "id": "g1",
+          "prompt": "Thông tin cuối cùng là gì?",
+          "answer": "11",
+          "evidence": "Let's meet at 11 instead.",
+          "max_words": 3,
+          "answer_variants": []
+        }
+      ]
+    },
+    {
+      "id": "independent",
+      "kind": "independent",
+      "instruction": "Ngữ liệu mới. Trả lời câu hỏi; chỉ nhận gợi ý nếu cần và kết quả sẽ được ghi là có trợ giúp.",
+      "stimulus": "The library usually opens at 8. Today's opening time is 9.\n\nOur room was 12. We will use room 15 instead.\n\nWe wanted to go by bus, but the bus was cancelled. We will take the train.\n\nThe fee was 20 dollars. It is now 25 dollars.",
+      "hints": [
+        "Đối chiếu thông tin thường lệ với thông tin hiện tại."
+      ],
+      "items": [
+        {
+          "id": "i1",
+          "prompt": "Giờ mở cửa hôm nay?",
+          "answer": "9",
+          "evidence": "The library usually opens at 8. Today's opening time is 9.",
+          "max_words": 3,
+          "answer_variants": []
+        },
+        {
+          "id": "i2",
+          "prompt": "Phòng sẽ sử dụng?",
+          "answer": "15",
+          "evidence": "Our room was 12. We will use room 15 instead.",
+          "max_words": 3,
+          "answer_variants": []
+        },
+        {
+          "id": "i3",
+          "prompt": "Phương tiện cuối cùng?",
+          "answer": "train",
+          "evidence": "We wanted to go by bus, but the bus was cancelled. We will take the train.",
+          "max_words": 3,
+          "answer_variants": []
+        },
+        {
+          "id": "i4",
+          "prompt": "Mức phí hiện tại?",
+          "answer": "25",
+          "evidence": "The fee was 20 dollars. It is now 25 dollars.",
+          "max_words": 3,
+          "answer_variants": []
+        }
+      ]
+    },
+    {
+      "id": "feedback",
+      "kind": "feedback",
+      "instruction": "Đọc phản hồi của bài đã nộp. Tìm một điểm bạn cần thay đổi; phản hồi không phải điểm IELTS."
+    },
+    {
+      "id": "repair",
+      "kind": "self_repair",
+      "instruction": "Tự sửa hoặc giải thích lại câu trả lời của bạn. Bài sửa không được tính như một lần làm mới độc lập.",
+      "items": [
+        {
+          "id": "repair1",
+          "prompt": "Hãy viết lại hoặc giải thích lý do thay đổi câu trả lời."
+        }
+      ]
+    },
+    {
+      "id": "transfer",
+      "kind": "transfer",
+      "instruction": "Thử tình huống khác. Dùng điều vừa học bằng lời của bạn, không chép lại mẫu.",
+      "stimulus": "The bus normally leaves from the school gate. Passengers must use the station today.\n\nI first chose the blue bag. In the end, I bought the red bag.\n\nThe shop usually closes at 6. For today only, it closes at 5.\n\nWe hoped to have a picnic. Because of rain, we decided to eat at home.",
+      "hints": [
+        "Nếu cần trợ giúp, bạn có thể xin gợi ý; bài sẽ được ghi nhận là có trợ giúp."
+      ],
+      "items": [
+        {
+          "id": "t1",
+          "prompt": "Nơi lên xe hôm nay?",
+          "answer": "station",
+          "evidence": "The bus normally leaves from the school gate. Passengers must use the station today.",
+          "max_words": 3,
+          "answer_variants": []
+        },
+        {
+          "id": "t2",
+          "prompt": "Màu túi đã mua?",
+          "answer": "red",
+          "evidence": "I first chose the blue bag. In the end, I bought the red bag.",
+          "max_words": 3,
+          "answer_variants": []
+        },
+        {
+          "id": "t3",
+          "prompt": "Giờ đóng cửa hôm nay?",
+          "answer": "5",
+          "evidence": "The shop usually closes at 6. For today only, it closes at 5.",
+          "max_words": 3,
+          "answer_variants": []
+        },
+        {
+          "id": "t4",
+          "prompt": "Nơi ăn cuối cùng?",
+          "answer": "home",
+          "evidence": "We hoped to have a picnic. Because of rain, we decided to eat at home.",
+          "max_words": 3,
+          "answer_variants": []
+        }
+      ]
+    },
+    {
+      "id": "review",
+      "kind": "review",
+      "instruction": "Ôn sau 2/7 ngày: trả lời một câu mới chưa gặp. Nếu đã hết câu mới, cần bổ sung nội dung.",
+      "stimulus": "We planned to meet on Monday. The meeting is now on Wednesday.",
+      "items": [
+        {
+          "id": "r1",
+          "prompt": "Ngày họp mới?",
+          "answer": "Wednesday",
+          "evidence": "The meeting is now on Wednesday.",
+          "max_words": 3,
+          "answer_variants": []
+        }
+      ]
+    },
+    {
+      "id": "review7",
+      "kind": "review",
+      "instruction": "Ôn sau 2/7 ngày: trả lời một câu mới chưa gặp. Nếu đã hết câu mới, cần bổ sung nội dung.",
+      "stimulus": "The concert was outside. Because of wind, it will be inside.",
+      "items": [
+        {
+          "id": "r2",
+          "prompt": "Buổi hòa nhạc diễn ra ở đâu?",
+          "answer": "inside",
+          "evidence": "Because of wind, it will be inside.",
+          "max_words": 3,
+          "answer_variants": []
+        }
+      ]
+    }
+  ]
+}

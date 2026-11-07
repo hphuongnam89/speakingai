@@ -6,6 +6,7 @@ from app.core.database import SessionLocal
 from app.models.audio import AudioRecordingModel
 from app.models.session import SessionModel
 from app.models.mistake import MistakeModel
+from app.models.turn import TurnModel
 
 client = TestClient(app)
 
@@ -67,6 +68,37 @@ def test_delete_profile_removes_associated_audio_files(tmp_path: Path):
     assert del_resp.status_code == 200
     # Audio file on disk must be cleaned up
     assert not audio_file.exists()
+
+
+def test_audio_playback_is_owner_scoped(tmp_path: Path):
+    owner = client.post("/api/v1/auth/register", json={"email": "audio-owner@example.com", "password": "owner-password-123"})
+    other = client.post("/api/v1/auth/register", json={"email": "audio-other@example.com", "password": "other-password-123"})
+    assert owner.status_code == 201 and other.status_code == 201
+
+    audio_file = tmp_path / "owner-recording.wav"
+    audio_file.write_bytes(b"owner-audio")
+    turn_id = "owner-audio-turn"
+    with SessionLocal() as db:
+        db.add(TurnModel(id=turn_id, owner_user_id=owner.json()["user_id"], role="user", transcript="hello"))
+        db.add(AudioRecordingModel(
+            owner_user_id=owner.json()["user_id"],
+            turn_id=turn_id,
+            file_path=str(audio_file),
+            content_type="audio/wav",
+            size_bytes=11,
+        ))
+        db.commit()
+
+    denied = client.get(
+        f"/api/v1/speech/audio/{turn_id}",
+        headers={"Authorization": f"Bearer {other.json()['access_token']}"},
+    )
+    allowed = client.get(
+        f"/api/v1/speech/audio/{turn_id}",
+        headers={"Authorization": f"Bearer {owner.json()['access_token']}"},
+    )
+    assert denied.status_code == 404
+    assert allowed.status_code == 200
 
 
 def test_session_idor_isolation():

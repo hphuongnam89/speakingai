@@ -1,0 +1,6 @@
+# Use explicitly: docker compose -f docker-compose.yml -f compose.host-ollama.yml up -d --build backend
+services:
+  backend:
+    depends_on: !reset {}
+    environment:
+      OLLAMA_BASE_URL: http://host.docker.internal:11434

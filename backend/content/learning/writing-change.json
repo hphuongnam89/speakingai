@@ -1,0 +1,120 @@
+{
+  "id": "writing-change",
+  "version": "0.1.0",
+  "unit_id": "change-plans",
+  "title": "Viết để giải thích lựa chọn",
+  "skill": "writing",
+  "objective": "Viết thông báo đổi kế hoạch có lý do liên quan và dễ hiểu.",
+  "competency_id": "writing.explain_choice",
+  "prerequisites": [
+    "writing.simple_sentence"
+  ],
+  "status": "draft",
+  "estimated_minutes": 15,
+  "provenance": {
+    "source": "Original Learning Edition draft, 2026-11-06",
+    "license": "unassigned-do-not-release",
+    "ai_assisted": true,
+    "reviewer_id": null,
+    "reviewed_at": null
+  },
+  "steps": [
+    {
+      "id": "explain",
+      "kind": "explain",
+      "instruction": "Mục tiêu là diễn đạt rõ ý và có lý do phù hợp. Đọc/nghe mẫu để hiểu cách liên kết lựa chọn với lý do. Bạn có thể diễn đạt bằng nhiều cách đúng."
+    },
+    {
+      "id": "example",
+      "kind": "worked_example",
+      "instruction": "Mẫu có lựa chọn và lý do liên quan. Hãy chỉ ra hai phần này; không cần học thuộc nguyên câu.",
+      "stimulus": "I cannot meet on Friday because I have a class. Could we meet on Saturday instead?"
+    },
+    {
+      "id": "guided",
+      "kind": "guided",
+      "instruction": "Thử làm với gợi ý. Nếu chưa rõ, yêu cầu hướng chú ý trước khi xem lời giải.",
+      "stimulus": "Our picnic was planned for Sunday. It may rain. We can meet indoors.",
+      "hints": [
+        "Nêu rõ điều bạn muốn thay đổi.",
+        "Thêm một lý do liên quan với because.",
+        "Viết hoặc nói bằng câu đơn của chính bạn."
+      ],
+      "items": [
+        {
+          "id": "g1",
+          "prompt": "Diễn đạt đề xuất và lý do của bạn.",
+          "answer": null,
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "independent",
+      "kind": "independent",
+      "instruction": "Tự diễn đạt; không xem bài mẫu. Gõ câu trả lời trong bản nền tảng này. Bản ghi âm sẽ được nối ở phase Speaking.",
+      "stimulus": "",
+      "hints": [
+        "Bắt đầu từ ý bạn muốn người đọc/nghe hiểu."
+      ],
+      "items": [
+        {
+          "id": "i1",
+          "prompt": "Bạn hẹn học nhóm vào sáng mai, nhưng phải đi khám. Viết 2–3 câu đề xuất giờ khác và giải thích.",
+          "answer": null,
+          "evidence": ""
+        },
+        {
+          "id": "i2",
+          "prompt": "Bạn muốn đổi nơi gặp bạn vì chỗ cũ quá ồn. Viết thông báo ngắn, kèm lý do.",
+          "answer": null,
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "feedback",
+      "kind": "feedback",
+      "instruction": "Đọc phản hồi của bài đã nộp. Tìm một điểm bạn cần thay đổi; phản hồi không phải điểm IELTS."
+    },
+    {
+      "id": "repair",
+      "kind": "self_repair",
+      "instruction": "Tự sửa hoặc giải thích lại câu trả lời của bạn. Bài sửa không được tính như một lần làm mới độc lập.",
+      "items": [
+        {
+          "id": "repair1",
+          "prompt": "Hãy viết lại hoặc giải thích lý do thay đổi câu trả lời."
+        }
+      ]
+    },
+    {
+      "id": "transfer",
+      "kind": "transfer",
+      "instruction": "Thử tình huống khác. Dùng điều vừa học bằng lời của bạn, không chép lại mẫu.",
+      "stimulus": "",
+      "hints": [
+        "Nếu cần trợ giúp, bạn có thể xin gợi ý; bài sẽ được ghi nhận là có trợ giúp."
+      ],
+      "items": [
+        {
+          "id": "t1",
+          "prompt": "Bạn đang tham gia câu lạc bộ. Đề xuất đổi cách đi tới sự kiện, giải thích lý do bằng 2–4 câu.",
+          "answer": null,
+          "evidence": ""
+        },
+        {
+          "id": "t2",
+          "prompt": "Một thành viên nhóm không thể dự họp. Viết đề xuất giữ hoặc đổi lịch với lý do rõ ràng.",
+          "answer": null,
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "review",
+      "kind": "review",
+      "instruction": "Bản nền tảng ghi lại bài học và trợ giúp. Lịch ôn/ngữ liệu retention tự động thuộc T12; chưa có kết luận đã thành thạo."
+    }
+  ]
+}

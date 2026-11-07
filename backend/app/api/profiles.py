@@ -63,6 +63,8 @@ def reset_all_data(request: Request, db: Session = Depends(get_db)):
     """
     from app.models import TurnModel, MistakeModel, DailyStatsModel, AudioRecordingModel
     owner = get_current_principal_id(request)
+    from app.services.learning import delete_learning_data
+    delete_learning_data(db, owner)
     profiles = db.query(ProfileModel).filter(ProfileModel.owner_user_id == owner).all()
     profile_ids = [p.id for p in profiles]
     sessions = db.query(SessionModel).filter(SessionModel.owner_user_id == owner).all()

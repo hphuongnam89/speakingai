@@ -62,7 +62,7 @@ class ModelRouter:
                 latency = round((time.time() - start_time) * 1000, 1)
                 return reply, {
                     "provider_used": "ollama",
-                    "model_used": settings.OLLAMA_MODEL,
+                    "model_used": opts.get("model", settings.OLLAMA_MODEL),
                     "fallback_triggered": False,
                     "fallback_reason": None,
                     "latency_ms": latency
@@ -81,7 +81,7 @@ class ModelRouter:
             latency = round((time.time() - start_time) * 1000, 1)
             return reply, {
                 "provider_used": "ollama",
-                "model_used": settings.OLLAMA_MODEL,
+                "model_used": opts.get("model", settings.OLLAMA_MODEL),
                 "fallback_triggered": False,
                 "fallback_reason": None,
                 "latency_ms": latency

@@ -1,0 +1,27 @@
+{
+  "id": "unit-change-plans.reading-01",
+  "version": "0.1.0-draft",
+  "status": "draft",
+  "skill": "reading",
+  "objective": "Xác định quyết định cuối cùng sau khi người viết đổi kế hoạch, chỉ được câu làm bằng chứng.",
+  "competency_ids": ["reading.follow_change"],
+  "prerequisites": ["reading.simple_sentence", "vocabulary.days_and_times"],
+  "estimated_minutes": 15,
+  "provenance": {
+    "source": "Original illustrative draft for the V2 plan; requires pedagogical review",
+    "license": "unassigned-do-not-release",
+    "ai_assisted": true,
+    "reviewer_id": null,
+    "reviewed_at": null
+  },
+  "steps": [
+    {"id":"r01-explain","kind":"explain","instruction":"Khi đọc thông báo, hãy theo dõi thông tin nào còn hiệu lực sau một thay đổi. Ví dụ: planned báo kế hoạch trước; but có thể giới thiệu thay đổi; now có thể chỉ lịch mới. Cần đọc cả ngữ cảnh, không chỉ tìm một từ khóa."},
+    {"id":"r01-model","kind":"worked_example","instruction":"Mẫu: lịch cũ là Monday, nhưng phòng chưa sẵn sàng nên lịch cuối là Wednesday. Cụm now on Wednesday cho biết thay đổi; không chọn ngày xuất hiện đầu tiên.","stimulus":"The workshop was planned for Monday, but the room is not ready. It is now on Wednesday.","author_answer":"Wednesday","evidence_quote":"It is now on Wednesday."},
+    {"id":"r01-guided","kind":"guided","instruction":"Chỉ ra lịch cũ và lịch mới. Nếu cần, yêu cầu gợi ý về thông tin còn hiệu lực.","stimulus":"We planned to meet at 10, but Mai has a class then. Let's meet at 11 instead.","author_answer":"11","evidence_quote":"Let's meet at 11 instead."},
+    {"id":"r01-independent","kind":"independent","instruction":"Thư viện sẽ mở lúc mấy giờ hôm nay? Chọn câu làm bằng chứng. Không dùng mẫu hoặc gợi ý nội dung trong lần kiểm tra này.","stimulus":"The library usually opens at 8. Because of a staff meeting, today's opening time is 9.","author_answer":"9","evidence_quote":"Because of a staff meeting, today's opening time is 9."},
+    {"id":"r01-feedback","kind":"feedback","instruction":"Sau khi nộp, đối chiếu câu được chọn với thông tin hôm nay. Nếu sai, hỏi người học giải thích nghĩa usually/today trước khi kết luận nguyên nhân; chỉ dạy lại phần thiếu."},
+    {"id":"r01-repair","kind":"self_repair","instruction":"Giải thích lại giờ mở hôm nay và vì sao không dùng giờ thường lệ. Lưu là correction uptake nếu trước đó đã được giải thích đáp án."},
+    {"id":"r01-transfer","kind":"transfer","instruction":"Bạn đi xe buýt ở đâu hôm nay? Chỉ ra thông tin hiện hành và giải thích sự khác biệt với nơi thường ngày.","stimulus":"The bus normally leaves from the school gate. Road repairs have closed that stop, so passengers must use the station today.","author_answer":"the station","evidence_quote":"passengers must use the station today"},
+    {"id":"r01-review","kind":"review","instruction":"Lên lịch ngữ liệu mới theo policy pilot. Các item lịch hẹn/vận chuyển chưa gặp phải được biên soạn, kiểm duyệt và gắn ID trước phát hành; ví dụ này chưa đủ inventory để kết luận mastery."}
+  ]
+}

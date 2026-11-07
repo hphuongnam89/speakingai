@@ -26,6 +26,8 @@ class OllamaProvider(LLMProvider):
                 "temperature": 0.4,
             },
         }
+        if (options or {}).get("format") is not None:
+            payload["format"] = options["format"]
         
         try:
             async with httpx.AsyncClient(timeout=timeout) as client:

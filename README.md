@@ -1,5 +1,9 @@
 # IELTS Speaking AI Coach
 
+Learning Edition tại `/learn` có bốn lesson draft: Reading với evidence, Listening với audio tổng hợp, Writing với góp ý và bản tự sửa, Speaking ghi âm/sửa transcript; Today, review 2/7 ngày và dashboard dùng cùng hồ sơ. Speaking cũ ở `/speaking`. Hướng dẫn: [Learning run/review](docs/learning-audit/RUN_AND_REVIEW.md); [bàn giao Phase 2–3](docs/learning-handoffs/2026-11-07-phase-2-3.md). Nội dung/audio vẫn chờ human review.
+
+Docker build hiện dùng repository root: `docker build -f backend/Dockerfile .` để đóng gói React web cùng backend. Nếu đã có Ollama native, dùng `docker compose -f docker-compose.yml -f compose.host-ollama.yml up -d --build backend` để tránh tải model vào container riêng.
+
 Ứng dụng luyện nói tiếng Anh và luyện thi IELTS Speaking với AI Coach chạy Local (Ollama) và Cloud fallback.
 
 ---
@@ -10,13 +14,13 @@ Product contract và privacy boundary v1 nằm tại [docs/15_PRODUCT_CONTRACT_V
 
 ### Yêu cầu
 - Python 3.12+ (hoặc Python 3.13)
-- Ollama với model `ornith-1.5:9b` (hoặc `gpt-oss:20b`)
+- Ollama với model `ornith1.5:9b` (hoặc `gpt-oss:20b`)
 
 ### Các bước chạy
 1. **Kiểm tra Ollama**:
    ```bash
    ollama list
-   # Đảm bảo đã có model: ornith-1.5:9b
+   # Đảm bảo đã có model: ornith1.5:9b
    ```
 
 2. **Cài đặt thư viện Python**:
@@ -69,7 +73,7 @@ Product contract và privacy boundary v1 nằm tại [docs/15_PRODUCT_CONTRACT_V
 ### Cấu hình kết nối Backend trên App:
 - **Nếu chạy trên Android Emulator**:
   - Mở app $\rightarrow$ bấm biểu tượng **Settings (⚙️)** góc trên bên phải.
-  - Chọn preset: `http://10.0.2.2:8000/` $\rightarrow$ bấm **Test Connection** (sẽ hiện `Connected (ornith-1.5:9b)` màu xanh).
+  - Chọn preset: `http://10.0.2.2:8000/` $\rightarrow$ bấm **Test Connection** (sẽ hiện `Connected (ornith1.5:9b)` màu xanh).
 - **Nếu chạy trên điện thoại thật cắm dây / cùng Wifi**:
   - Nhập địa chỉ IP máy tính trong mạng LAN (ví dụ: `http://192.168.1.15:8000/`) $\rightarrow$ bấm **Test Connection**.
 

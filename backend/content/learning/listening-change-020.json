@@ -1,0 +1,210 @@
+{
+  "id": "listening-change",
+  "version": "0.2.0",
+  "unit_id": "change-plans",
+  "title": "Nghe và theo dõi đổi ý",
+  "skill": "listening",
+  "objective": "Hiểu quyết định cuối cùng khi người nói sửa thông tin.",
+  "competency_id": "listening.follow_change",
+  "prerequisites": [
+    "vocabulary.days_times"
+  ],
+  "status": "draft",
+  "estimated_minutes": 15,
+  "provenance": {
+    "source": "Original Learning Edition draft, 2026-11-06",
+    "license": "unassigned-do-not-release",
+    "ai_assisted": true,
+    "reviewer_id": null,
+    "reviewed_at": null
+  },
+  "steps": [
+    {
+      "id": "explain",
+      "kind": "explain",
+      "instruction": "Thông tin xuất hiện trước chưa chắc là quyết định cuối cùng. Theo dõi quan hệ giữa các câu và dấu hiệu đổi ý; giải thích ý nghĩa thay vì chỉ dò từ."
+    },
+    {
+      "id": "example",
+      "kind": "worked_example",
+      "instruction": "Mẫu nêu kế hoạch cũ rồi sửa lại. Hãy chỉ ra thông tin cuối cùng và câu báo thay đổi.",
+      "stimulus": "Let's meet on Tuesday. Actually, Thursday is better because I have a class on Tuesday.",
+      "audio_file": "listening-020-example.wav",
+      "audio_sha256": "b9d16150590c2d4a78d151b5c661f4d76921ee263b993ab1cbe6523c0284fdac"
+    },
+    {
+      "id": "guided",
+      "kind": "guided",
+      "instruction": "Thử làm với gợi ý. Nếu chưa rõ, yêu cầu hướng chú ý trước khi xem lời giải.",
+      "stimulus": "The ticket is fifteen pounds. Sorry, that is the child ticket. The adult ticket is twenty pounds.",
+      "hints": [
+        "Thông tin nào được sửa lại?",
+        "Đối chiếu thông tin đầu và cuối.",
+        "Đọc/nghe lại câu cuối trước khi chọn.",
+        "Quyết định cuối cùng là twenty."
+      ],
+      "items": [
+        {
+          "id": "g1",
+          "prompt": "Thông tin cuối cùng là gì?",
+          "answer": "twenty",
+          "evidence": "The adult ticket is twenty pounds.",
+          "max_words": 3,
+          "answer_variants": [
+            "20"
+          ]
+        }
+      ],
+      "audio_file": "listening-020-guided.wav",
+      "audio_sha256": "469fa84fd10caef9149eb61f79e5955aae6e6c7b6a63a01a74313914b296162b"
+    },
+    {
+      "id": "independent",
+      "kind": "independent",
+      "instruction": "Ngữ liệu mới. Trả lời câu hỏi; chỉ nhận gợi ý nếu cần và kết quả sẽ được ghi là có trợ giúp.",
+      "stimulus": "I booked table three. Sorry, I mean table five.\n\nThe train was due at ten. It will now arrive at eleven.\n\nPlease bring two books. Actually, bring three.\n\nI wanted soup, but I will have rice instead.",
+      "hints": [
+        "Đối chiếu thông tin thường lệ với thông tin hiện tại."
+      ],
+      "items": [
+        {
+          "id": "i1",
+          "prompt": "Số bàn cuối cùng?",
+          "answer": "five",
+          "evidence": "I booked table three. Sorry, I mean table five.",
+          "max_words": 3,
+          "answer_variants": [
+            "5"
+          ]
+        },
+        {
+          "id": "i2",
+          "prompt": "Giờ tàu đến sau thay đổi?",
+          "answer": "eleven",
+          "evidence": "The train was due at ten. It will now arrive at eleven.",
+          "max_words": 3,
+          "answer_variants": [
+            "11"
+          ]
+        },
+        {
+          "id": "i3",
+          "prompt": "Số sách cần mang?",
+          "answer": "three",
+          "evidence": "Please bring two books. Actually, bring three.",
+          "max_words": 3,
+          "answer_variants": [
+            "3"
+          ]
+        },
+        {
+          "id": "i4",
+          "prompt": "Món ăn được chọn?",
+          "answer": "rice",
+          "evidence": "I wanted soup, but I will have rice instead.",
+          "max_words": 3,
+          "answer_variants": []
+        }
+      ],
+      "audio_file": "listening-020-independent.wav",
+      "audio_sha256": "503a6166a9ee4d979f7ccbe4309b7d284f51e102bc065498ce63323928c52855"
+    },
+    {
+      "id": "feedback",
+      "kind": "feedback",
+      "instruction": "Đọc phản hồi của bài đã nộp. Tìm một điểm bạn cần thay đổi; phản hồi không phải điểm IELTS."
+    },
+    {
+      "id": "repair",
+      "kind": "self_repair",
+      "instruction": "Tự xác định điểm cần kiểm tra: bạn hiểu từ viết không, nghe ra từ không, hay chỉ sai cách viết? Đối chiếu transcript rồi nghe lại. Nếu chưa rõ nguyên nhân, ghi chưa rõ thay vì tự kết luận.",
+      "items": [
+        {
+          "id": "repair1",
+          "prompt": "Hãy viết lại hoặc giải thích lý do thay đổi câu trả lời."
+        }
+      ]
+    },
+    {
+      "id": "transfer",
+      "kind": "transfer",
+      "instruction": "Thử tình huống khác. Dùng điều vừa học bằng lời của bạn, không chép lại mẫu.",
+      "stimulus": "You can call me at work. No, call me at home today.\n\nLet's walk to the park. On second thoughts, let's cycle.\n\nThe class starts in May. That has changed to June.\n\nI thought the key was upstairs. I found it downstairs.",
+      "hints": [
+        "Nếu cần trợ giúp, bạn có thể xin gợi ý; bài sẽ được ghi nhận là có trợ giúp."
+      ],
+      "items": [
+        {
+          "id": "t1",
+          "prompt": "Gọi tới đâu hôm nay?",
+          "answer": "home",
+          "evidence": "You can call me at work. No, call me at home today.",
+          "max_words": 3,
+          "answer_variants": []
+        },
+        {
+          "id": "t2",
+          "prompt": "Cách đến công viên sau đổi ý?",
+          "answer": "cycle",
+          "evidence": "Let's walk to the park. On second thoughts, let's cycle.",
+          "max_words": 3,
+          "answer_variants": []
+        },
+        {
+          "id": "t3",
+          "prompt": "Tháng bắt đầu mới?",
+          "answer": "June",
+          "evidence": "The class starts in May. That has changed to June.",
+          "max_words": 3,
+          "answer_variants": []
+        },
+        {
+          "id": "t4",
+          "prompt": "Chìa khóa được tìm thấy ở đâu?",
+          "answer": "downstairs",
+          "evidence": "I thought the key was upstairs. I found it downstairs.",
+          "max_words": 3,
+          "answer_variants": []
+        }
+      ],
+      "audio_file": "listening-020-transfer.wav",
+      "audio_sha256": "ec8a148fd99f4670a05e2c668f7abe5d88a26c81d9570478168d4249e7145814"
+    },
+    {
+      "id": "review",
+      "kind": "review",
+      "instruction": "Ôn sau 2/7 ngày: trả lời một câu mới chưa gặp. Nếu đã hết câu mới, cần bổ sung nội dung.",
+      "stimulus": "We planned to meet on Monday. The meeting is now on Wednesday.",
+      "items": [
+        {
+          "id": "r1",
+          "prompt": "Ngày họp mới?",
+          "answer": "Wednesday",
+          "evidence": "The meeting is now on Wednesday.",
+          "max_words": 3,
+          "answer_variants": []
+        }
+      ],
+      "audio_file": "listening-020-review.wav",
+      "audio_sha256": "06927b1217b8d8687f973e813d7558509539797b398393c4635338be5920b592"
+    },
+    {
+      "id": "review7",
+      "kind": "review",
+      "instruction": "Ôn sau 2/7 ngày: trả lời một câu mới chưa gặp. Nếu đã hết câu mới, cần bổ sung nội dung.",
+      "stimulus": "The concert was outside. Because of wind, it will be inside.",
+      "items": [
+        {
+          "id": "r2",
+          "prompt": "Buổi hòa nhạc diễn ra ở đâu?",
+          "answer": "inside",
+          "evidence": "Because of wind, it will be inside.",
+          "max_words": 3,
+          "answer_variants": []
+        }
+      ],
+      "audio_file": "listening-020-review7.wav",
+      "audio_sha256": "daa17a38be70a6a9138c8873e0dca49c927fd21f46b2b419cebb1c915242e36a"
+    }
+  ]
+}

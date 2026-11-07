@@ -226,6 +226,10 @@ async function api(path, options = {}) {
     const contentType = response.headers.get("content-type") || "";
     const payload = contentType.includes("application/json") ? await response.json() : await response.text();
     if (!response.ok) {
+      if (response.status === 401) {
+        window.location.assign("/learn");
+        throw new Error("Phiên đăng nhập hết hạn. Hãy đăng nhập lại.");
+      }
       const detail = typeof payload === "object" ? payload.detail : payload;
       throw new Error(detail || `Request failed (${response.status})`);
     }
@@ -245,7 +249,16 @@ function setConnection(kind, label) {
 
 async function checkConnection() {
   try {
-    const status = await api("/models/status");
+    const [status, catalog] = await Promise.all([api("/models/status"), api("/models")]);
+    const selector = $("llm-model-select");
+    if (selector) {
+      selector.replaceChildren(...catalog.installed_models.map(name => {
+        const option = document.createElement("option");
+        option.value = name; option.textContent = name;
+        option.selected = name === catalog.selected_model;
+        return option;
+      }));
+    }
     if (status.ollama?.available) {
       setConnection("is-ready", `Đã kết nối Ollama · ${status.ollama.model}`);
       const modelSelect = $("llm-model-select");
@@ -2569,7 +2582,9 @@ document.querySelectorAll(".quick-chip").forEach((btn) => {
 });
 
 // INITIALIZE
-checkConnection();
-checkSpeechAvailability();
-loadProfiles();
+api("/auth/session").then(() => {
+  checkConnection();
+  checkSpeechAvailability();
+  loadProfiles();
+}).catch(() => window.location.assign("/learn"));
 initTopicHub();

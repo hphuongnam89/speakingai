@@ -41,6 +41,8 @@ def init_db():
     # created by earlier app versions. Keep these small additive migrations so
     # existing SQLite and PostgreSQL databases can start without manual reset.
     additive_columns = {
+        "learning_attempts": {"drafts_json": "TEXT DEFAULT '{}'"},
+        "learning_events": {"created_at": "TIMESTAMP"},
         "user_settings": {
             "provider_preference": "VARCHAR DEFAULT 'auto'",
             "preferred_model": "VARCHAR",

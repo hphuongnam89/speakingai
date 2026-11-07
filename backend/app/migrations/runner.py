@@ -3,6 +3,9 @@ from app.core.database import engine
 
 
 MIGRATIONS = {
+    # Learning tables are created additively by SQLAlchemy metadata in init_db.
+    "009_learning_foundation": [],
+    "010_learning_review_policy": [],
     "001_owner_and_audio": [
         "ALTER TABLE profiles ADD COLUMN owner_user_id VARCHAR DEFAULT 'default'",
         "CREATE INDEX IF NOT EXISTS ix_profiles_owner_user_id ON profiles(owner_user_id)",

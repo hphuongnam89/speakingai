@@ -34,4 +34,7 @@ backend/data/audio/
 
 *.log
 .DS_Store
+frontend/node_modules/
+backend/web/learning/
+!backend/content/learning/*.wav
 

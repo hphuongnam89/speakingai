@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ielts-learning-edition:v2:observation",
+  "title": "Server-generated internal evidence record; never trust as a client submit body",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "owner_user_id", "profile_id", "attempt_id", "item_id", "item_version", "competency_id", "created_at", "evidence_kind", "result", "assistance", "scorer", "policy_version", "evidence_refs"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "owner_user_id": {"type": "string", "minLength": 1},
+    "profile_id": {"type": "string", "minLength": 1},
+    "attempt_id": {"type": "string", "minLength": 1},
+    "item_id": {"type": "string", "minLength": 1},
+    "item_version": {"type": "string", "minLength": 1},
+    "competency_id": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "format": "date-time"},
+    "evidence_kind": {"enum": ["exposure", "assisted", "independent", "correction_uptake", "transfer", "retention"]},
+    "result": {"enum": ["met", "partially_met", "not_yet", "unknown", "not_assessable"]},
+    "assistance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_hint_level", "answer_revealed", "model_answer_seen", "content_seen_before"],
+      "properties": {
+        "max_hint_level": {"type": "integer", "minimum": 0, "maximum": 4},
+        "answer_revealed": {"type": "boolean"},
+        "model_answer_seen": {"type": "boolean"},
+        "content_seen_before": {"type": "boolean"}
+      }
+    },
+    "scorer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "version", "provider", "model", "prompt_version", "rubric_version", "confidence_status"],
+      "properties": {
+        "type": {"enum": ["deterministic", "llm", "human", "not_scored"]},
+        "version": {"type": "string", "minLength": 1},
+        "provider": {"type": ["string", "null"]},
+        "model": {"type": ["string", "null"]},
+        "prompt_version": {"type": ["string", "null"]},
+        "rubric_version": {"type": ["string", "null"]},
+        "confidence_status": {"enum": ["not_applicable", "unvalidated", "insufficient", "human_reviewed", "validated_on_heldout_set"]}
+      }
+    },
+    "policy_version": {"type": "string", "minLength": 1},
+    "evidence_refs": {"type": "array", "items": {"type": "string", "minLength": 1}}
+  }
+}

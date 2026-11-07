@@ -1,0 +1,17 @@
+.git
+.env
+.env.*
+**/node_modules
+**/venv
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/*.db
+**/*.db-*
+**/*.log
+/data
+/backend/data
+android
+outputs
+docs
+backend/web/learning

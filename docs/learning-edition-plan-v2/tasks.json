@@ -1,0 +1,28 @@
+{
+  "plan_version": "2.0",
+  "status": "in_progress",
+  "task_spec": "08_TASKS.md",
+  "phases": [{"id":0,"tasks":["T00","T01","T02"],"status":"done"},{"id":1,"tasks":["T03","T04","T05","T06","T07"],"status":"done","scope":"Technical foundation and draft preview; not human-approved curriculum"},{"id":2,"tasks":["T08","T09","T10","T11"],"status":"done","scope":"Technical skill slices for draft preview; microphone hardware and human content/audio review remain unverified"},{"id":3,"tasks":["T12","T13","T14","T15"],"status":"done","scope":"Technical evidence/review/planner/dashboard and integrated unit; not a learning-effectiveness pilot"}],
+  "tasks": [
+    {"id":"T00","title":"Baseline và quyết định tích hợp","depends_on":[],"status":"done","evidence":"../learning-handoffs/2026-11-06-phase-0-1.md"},
+    {"id":"T01","title":"App local, auth và model","depends_on":["T00"],"status":"done","evidence":"../learning-handoffs/2026-11-06-phase-0-1.md"},
+    {"id":"T02","title":"Chọn code donor và ADR","depends_on":["T00"],"status":"done","evidence":"../learning-handoffs/2026-11-06-phase-0-1.md"},
+    {"id":"T03","title":"Content, evidence và API contract","depends_on":["T00","T02"],"status":"done","evidence":"../learning-handoffs/2026-11-06-phase-0-1.md"},
+    {"id":"T04","title":"Persistence và migrations","depends_on":["T03"],"status":"done","evidence":"../learning-handoffs/2026-11-06-phase-0-1.md"},
+    {"id":"T05","title":"Content pipeline và bài draft","depends_on":["T03"],"status":"done","evidence":"../learning-handoffs/2026-11-06-phase-0-1.md"},
+    {"id":"T06","title":"Lesson player và web shell","depends_on":["T01","T02","T04","T05"],"status":"done","evidence":"../learning-handoffs/2026-11-06-phase-0-1.md"},
+    {"id":"T07","title":"Tutor và self-correction","depends_on":["T03","T04","T05"],"status":"done","evidence":"../learning-handoffs/2026-11-06-phase-0-1.md"},
+    {"id":"T08","title":"Reading learning slice","depends_on":["T02","T04","T05","T06","T07"],"status":"done","evidence":"../learning-handoffs/2026-11-07-phase-2-3.md"},
+    {"id":"T09","title":"Listening learning slice","depends_on":["T02","T04","T05","T06","T07"],"status":"done","evidence":"../learning-handoffs/2026-11-07-phase-2-3.md"},
+    {"id":"T10","title":"Writing learning slice","depends_on":["T02","T04","T05","T06","T07"],"status":"done","evidence":"../learning-handoffs/2026-11-07-phase-2-3.md"},
+    {"id":"T11","title":"Speaking learning slice","depends_on":["T04","T05","T06","T07"],"status":"done","evidence":"../learning-handoffs/2026-11-07-phase-2-3.md","manual_limit":"Real microphone/Android hardware not checked"},
+    {"id":"T12","title":"Evidence, review và mastery","depends_on":["T04","T05","T07"],"status":"done","evidence":"../learning-handoffs/2026-11-07-phase-2-3.md"},
+    {"id":"T13","title":"Daily planner","depends_on":["T04","T05","T12"],"status":"done","evidence":"../learning-handoffs/2026-11-07-phase-2-3.md"},
+    {"id":"T14","title":"Integrated learning unit","depends_on":["T08","T09","T10","T11","T12","T13"],"status":"done","evidence":"../learning-handoffs/2026-11-07-phase-2-3.md","scope":"API four-skill journey and browser media/writing; hardware microphone and learning-effectiveness validation excluded"},
+    {"id":"T15","title":"Learning dashboard","depends_on":["T06","T12","T13"],"status":"done","evidence":"../learning-handoffs/2026-11-07-phase-2-3.md"},
+    {"id":"T16","title":"Assessment và scoring honesty","depends_on":["T00","T03","T07"],"status":"planned"},
+    {"id":"T17","title":"Regression và release candidate","depends_on":["T14","T15","T16"],"status":"planned"},
+    {"id":"T18","title":"Learning pilot","depends_on":["T17"],"status":"planned","external_gate":"Human-reviewed unit và người học pilot thực tế"},
+    {"id":"T19","title":"Bàn giao bản học tập đầu tiên","depends_on":["T18"],"status":"planned"}
+  ]
+}

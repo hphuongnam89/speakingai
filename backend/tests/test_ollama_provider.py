@@ -64,3 +64,13 @@ def test_status_requires_configured_model(monkeypatch):
     assert status["available"] is False
     assert status["model"] == settings.OLLAMA_MODEL
     assert status["error"]
+
+
+def test_learning_tutor_passes_json_schema_to_ollama(monkeypatch):
+    from app.schemas.learning import TutorFeedback
+    schema = TutorFeedback.model_json_schema()
+    def respond(request):
+        assert json.loads(request.content)["format"] == schema
+        return httpx.Response(200, json={"message":{"content":"{}"},"done_reason":"stop"})
+    mock_ollama(monkeypatch, respond)
+    assert asyncio.run(OllamaProvider().chat([], {"format":schema})) == "{}"

@@ -38,7 +38,8 @@ from app.api import (
     pronunciation,
     profiles,
     placement,
-    pilot
+    pilot,
+    learning
 )
 
 logger = logging.getLogger(__name__)
@@ -60,6 +61,10 @@ async def periodic_audio_cleanup():
 async def lifespan(app: FastAPI):
     # Startup: Database migration & directory creation
     init_db()
+    from app.core.database import SessionLocal
+    from app.services.learning_content import import_pack
+    with SessionLocal() as db:
+        import_pack(db)
     os.makedirs(settings.AUDIO_DIR, exist_ok=True)
     from app.services.audio_retention import cleanup_expired_audio
     cleanup_expired_audio()
@@ -117,14 +122,24 @@ app.include_router(pronunciation.router, prefix="/api/v1", dependencies=protecte
 app.include_router(profiles.router, prefix="/api/v1", dependencies=protected_deps)
 app.include_router(placement.router, prefix="/api/v1", dependencies=protected_deps)
 app.include_router(pilot.router, prefix="/api/v1", dependencies=protected_deps)
+app.include_router(learning.router, prefix="/api/v1", dependencies=protected_deps)
 
 WEB_DIR = Path(__file__).resolve().parents[1] / "web"
 app.mount("/static", StaticFiles(directory=WEB_DIR), name="web-static")
 
 @app.get("/", include_in_schema=False)
 def web_home():
-    if settings.ENVIRONMENT.strip().lower() == "production":
-        return read_root()
+    built = WEB_DIR / "learning" / "index.html"
+    return FileResponse(built if built.exists() else WEB_DIR / "index.html")
+
+
+@app.get("/learn", include_in_schema=False)
+def learning_home():
+    return web_home()
+
+
+@app.get("/speaking", include_in_schema=False)
+def speaking_home():
     return FileResponse(WEB_DIR / "index.html")
 
 @app.get("/api/v1/info")

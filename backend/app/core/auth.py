@@ -25,6 +25,17 @@ def verify_api_key(
     Supports either 'X-API-Key' header or 'Authorization: Bearer <token>'.
     If API_KEY_ENABLED is False (local LAN default), access is granted unconditionally.
     """
+    cookie_token = request.cookies.get("learning_session") if not bearer and not api_key else None
+    if cookie_token:
+        if request.method not in {"GET", "HEAD", "OPTIONS"}:
+            expected_origin = str(request.base_url).rstrip("/")
+            if request.headers.get("origin") != expected_origin:
+                raise HTTPException(status_code=403, detail="Same-origin request required")
+        user_id = decode_access_token(cookie_token)
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid or expired session")
+        request.state.user_id = user_id
+        return True
     if bearer:
         user_id = decode_access_token(bearer.credentials)
         if user_id:
@@ -70,9 +81,13 @@ def get_current_user_id(request: Request) -> str:
             query = db.query(ProfileModel).filter(ProfileModel.owner_user_id == principal)
             if selected and selected.strip():
                 profile = query.filter(ProfileModel.id == selected.strip()).first()
-                return profile.id if profile else principal
+                if not profile:
+                    raise HTTPException(status_code=404, detail="Profile not found")
+                return profile.id
             active = query.filter(ProfileModel.is_active == True).order_by(ProfileModel.last_active_at.desc()).first()
             return active.id if active else principal
+    except HTTPException:
+        raise
     except Exception:
         pass
     return principal

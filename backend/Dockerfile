@@ -1,8 +1,15 @@
 # Multi-stage production Dockerfile for IELTS Speaking AI Backend
+FROM node:22-slim AS web
+WORKDIR /build/frontend
+COPY frontend/package.json frontend/package-lock.json frontend/.npmrc ./
+RUN npm ci --ignore-scripts
+COPY frontend/ ./
+RUN npm run typecheck && npm run build
+
 FROM python:3.12-slim AS builder
 
 WORKDIR /build
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN apt-get update && apt-get install -y --no-install-recommends gcc && \
     pip install --no-cache-dir --prefix=/install -r requirements.txt
 
@@ -24,7 +31,8 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser && \
     chown -R appuser:appuser /app
 
 # Copy application source code
-COPY --chown=appuser:appuser . .
+COPY --chown=appuser:appuser backend/ .
+COPY --from=web --chown=appuser:appuser /build/backend/web/learning /app/web/learning
 
 USER appuser
 
